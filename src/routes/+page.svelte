@@ -14,7 +14,7 @@
 	import EventTypeCell from '$lib/EventTypeCell.svelte';
 
 	const data = processedData;
-	console.log('called from DT.svelte', data);
+	// console.log('called from DT.svelte', data);
 
 	const columns = [
 		// {
@@ -78,14 +78,14 @@
 		period: { order: 'asc' }
 	};
 	// const left = 4; // freeze 5 colns
-	const left = 0;
-
+	const left = 2;
 	let localGrid = $state();
-	// $effect(() => {
-	// 	if (localGrid) {
-	// 		grid.set(localGrid);
-	// 	}
-	// });
+
+	// let stores;
+	// function init(api) {
+	// 	stores = api.getStores();
+	// 	console.log('***DataStore***', stores);
+	// }
 </script>
 
 <!-- <ProjectOverview /> -->
@@ -112,7 +112,9 @@
 			</Willow>
 		</div>
 	</section>
+
 	<footer>
+		<div>更新：2026-02-06</div>
 		<div>
 			データソース: camp-fire
 			<a href="https://camp-fire.jp/profile/heroines"> heroines </a>
