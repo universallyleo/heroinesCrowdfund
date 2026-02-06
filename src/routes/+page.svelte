@@ -6,7 +6,7 @@
 
 	import { Grid } from '@svar-ui/svelte-grid';
 	import { Willow } from '@svar-ui/svelte-core';
-	import { processedData } from '$lib/procData';
+	import { MoneyString, processedData } from '$lib/procData';
 	import TotalFundCell from '$lib/TotalFundCell.svelte';
 	import PeriodCell from '$lib/PeriodCell.svelte';
 	import GroupMemberCell from '$lib/GroupMemberCell.svelte';
@@ -45,6 +45,7 @@
 			id: 'averageFund',
 			header: '平均支援額',
 			width: 95,
+			template: (val, row) => MoneyString(row.averageFund.toFixed(0)),
 			sort: true
 		},
 		{
@@ -78,7 +79,7 @@
 		period: { order: 'asc' }
 	};
 	// const left = 4; // freeze 5 colns
-	const left = 2;
+	const left = 1;
 	let localGrid = $state();
 
 	// let stores;

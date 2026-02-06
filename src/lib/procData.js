@@ -150,7 +150,8 @@ export const processedData = data.reduce((arr, o, i) => {
 		o.subject
 	);
 	r.totalpatrons = o.rest;
-	r.averageFund = MoneyString((o.total / o.rest).toFixed(0));
+	// r.averageFund = MoneyString((o.total / o.rest).toFixed(0));
+	r.averageFund = o.total / o.rest;
 	r.id = i;
 	r.period = dayFrom(o.end, o.start);
 	// r.eventYear = Number(o.sub.slice(0, 4));

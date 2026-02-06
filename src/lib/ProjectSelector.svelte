@@ -17,7 +17,7 @@
 	const when = (cond, obj) => (cond ? obj : {});
 
 	let filtObj = $derived({
-		...when(gpFilt !== '', { group: gpFilt }),
+		...when(gpFilt.length < gps.length, { group: gpFilt }),
 		...when(mbFilt !== '', { member: mbFilt }),
 		...when(yrFilt !== '', { eventYear: Number(yrFilt) }),
 		minFund: minFundFilt * 1000,
