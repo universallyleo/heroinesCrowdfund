@@ -23,6 +23,11 @@
 			Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
 			'Open Sans', 'Helvetica Neue', sans-serif;
 		--font-mono: 'Fira Mono', monospace;
+
+		--weak-hilight: #f8f8f8;
+		--bg-emph: #e6e6e6;
+		--bg-emph2: #dcdcdc;
+		--tb-border-color: #e6e6e6;
 	}
 
 	* {

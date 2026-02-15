@@ -4,9 +4,42 @@
 		"title": "のんふぃく！【澪織にいな】生誕祭応援プロジェクト",
 		"sub": "2026年3月実施予定の澪織にいな生誕祭をより盛大にお祝いできるようご支援をお願いいたします。",
 		"bar": "33%",
-		"total": 330000,
-		"rest": 4,
-		"per": "28日",
+		"total": 3374217,
+		"rest": 104,
+		"per": "終了",
+		"pricePatrons": [
+			{
+				"price": 3000,
+				"patrons": 8
+			},
+			{
+				"price": 6000,
+				"patrons": 4
+			},
+			{
+				"price": 10000,
+				"patrons": 66
+			},
+			{
+				"price": 50000,
+				"patrons": 17
+			},
+			{
+				"price": 100000,
+				"patrons": 6
+			},
+			{
+				"price": 300000,
+				"patrons": 4
+			}
+		],
+		"subject": {
+			"group": "のんふぃく！",
+			"member": "澪織にいな",
+			"type": "生誕祭"
+		},
+		"start": "2026-01-14",
+		"end": "2026-02-11",
 		"eventYear": 2026
 	},
 	{
@@ -87,9 +120,38 @@
 		"title": "ZUTTOMOTTO【羽澄ほの】卒業公演プロジェクト",
 		"sub": "2026年3月実施予定の羽澄ほの卒業公演をより盛大に送り出せるようご支援をお願いいたします。",
 		"bar": "72%",
-		"total": 725000,
-		"rest": 20,
-		"per": "22日",
+		"total": 1393629,
+		"rest": 61,
+		"per": "終了",
+		"pricePatrons": [
+			{
+				"price": 3000,
+				"patrons": 14
+			},
+			{
+				"price": 10000,
+				"patrons": 22
+			},
+			{
+				"price": 20000,
+				"patrons": 14
+			},
+			{
+				"price": 50000,
+				"patrons": 5
+			},
+			{
+				"price": 100000,
+				"patrons": 6
+			}
+		],
+		"subject": {
+			"group": "ZUTTOMOTTO",
+			"member": "羽澄ほの",
+			"type": "卒業公演"
+		},
+		"start": "2025-12-28",
+		"end": "2026-02-05",
 		"eventYear": 2026
 	},
 	{
@@ -97,9 +159,42 @@
 		"title": "CAL&RES【九条あすな】生誕祭応援プロジェクト",
 		"sub": "2026年3月実施予定の九条あすな生誕祭をより盛大にお祝いできるようご支援をお願いいたします。",
 		"bar": "79%",
-		"total": 792000,
-		"rest": 14,
-		"per": "19日",
+		"total": 1600228,
+		"rest": 43,
+		"per": "終了",
+		"pricePatrons": [
+			{
+				"price": 3000,
+				"patrons": 8
+			},
+			{
+				"price": 6000,
+				"patrons": 1
+			},
+			{
+				"price": 10000,
+				"patrons": 27
+			},
+			{
+				"price": 50000,
+				"patrons": 2
+			},
+			{
+				"price": 100000,
+				"patrons": 3
+			},
+			{
+				"price": 300000,
+				"patrons": 3
+			}
+		],
+		"subject": {
+			"group": "CAL&RES",
+			"member": "九条あすな",
+			"type": "生誕祭"
+		},
+		"start": "2025-12-25",
+		"end": "2026-02-02",
 		"eventYear": 2026
 	},
 	{

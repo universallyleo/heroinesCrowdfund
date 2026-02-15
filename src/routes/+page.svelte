@@ -4,8 +4,8 @@
 	import xicon from '$lib/assets/X_icon.svg';
 	import ProjectSelector from '$lib/ProjectSelector.svelte';
 
-	import { Grid } from '@svar-ui/svelte-grid';
-	import { Willow } from '@svar-ui/svelte-core';
+	// import { Grid } from '@svar-ui/svelte-grid';
+	// import { Willow } from '@svar-ui/svelte-core';
 	import { MoneyString, processedData } from '$lib/procData';
 	import TotalFundCell from '$lib/TotalFundCell.svelte';
 	import PeriodCell from '$lib/PeriodCell.svelte';
@@ -13,80 +13,87 @@
 	import ReturnItemCell from '$lib/ReturnItemCell.svelte';
 	import EventTypeCell from '$lib/EventTypeCell.svelte';
 
+	import { TableHandler, Datatable } from '@vincjo/datatables';
+	import ThSortCustom from '$lib/ThSortCustom.svelte';
+
+	// import { readable } from 'svelte/store';
+
 	const data = processedData;
 	// console.log('called from DT.svelte', data);
 
-	const columns = [
-		// {
-		// 	id: 'id',
-		// 	width: 45,
-		// 	sort: true
-		// },
-		{
-			id: 'member',
-			header: 'メンバー',
-			cell: GroupMemberCell,
-			width: 185
-		},
-		{
-			id: 'total',
-			header: '総支援額',
-			cell: TotalFundCell,
-			width: 130,
-			sort: true
-		},
-		{
-			id: 'totalpatrons',
-			header: '支援者数',
-			width: 75,
-			sort: true
-		},
-		{
-			id: 'averageFund',
-			header: '平均支援額',
-			width: 95,
-			template: (val, row) => MoneyString(row.averageFund.toFixed(0)),
-			sort: true
-		},
-		{
-			id: 'period',
-			header: 'クラファ期間',
-			cell: PeriodCell,
-			width: 150,
-			sort: true
-		},
-		{
-			id: 'type',
-			header: 'イベント',
-			width: 80,
-			cell: EventTypeCell,
-			sort: true
-		},
-		{
-			id: 'ppTotal',
-			header: { text: '各リターン品支援額・人数' },
-			cell: ReturnItemCell,
-			width: 540
-		}
-	];
-	/** @type {import("@svar-ui/svelte-grid").ISortMarks} */
-	const sortMarks = {
-		id: { order: 'asc' },
-		// type: { order: 'asc' },
-		total: { order: 'desc' },
-		totalpatrons: { order: 'desc' },
-		averageFund: { order: 'desc' },
-		period: { order: 'asc' }
-	};
-	// const left = 4; // freeze 5 colns
-	const left = 1;
-	let localGrid = $state();
+	const table = new TableHandler(data);
 
-	// let stores;
-	// function init(api) {
-	// 	stores = api.getStores();
-	// 	console.log('***DataStore***', stores);
-	// }
+	// const columns = [
+	// 	// {
+	// 	// 	id: 'id',
+	// 	// 	width: 45,
+	// 	// 	sort: true
+	// 	// },
+	// 	{
+	// 		id: 'member',
+	// 		header: 'メンバー',
+	// 		cell: GroupMemberCell,
+	// 		width: 185
+	// 	},
+	// 	{
+	// 		id: 'total',
+	// 		header: '総支援額',
+	// 		cell: TotalFundCell,
+	// 		width: 130,
+	// 		sort: true
+	// 	},
+	// 	{
+	// 		id: 'totalpatrons',
+	// 		header: '支援者数',
+	// 		width: 75,
+	// 		sort: true
+	// 	},
+	// 	{
+	// 		id: 'averageFund',
+	// 		header: '平均支援額',
+	// 		width: 95,
+	// 		template: (val, row) => MoneyString(row.averageFund.toFixed(0)),
+	// 		sort: true
+	// 	},
+	// 	{
+	// 		id: 'period',
+	// 		header: 'クラファ期間',
+	// 		cell: PeriodCell,
+	// 		width: 150,
+	// 		sort: true
+	// 	},
+	// 	{
+	// 		id: 'type',
+	// 		header: 'イベント',
+	// 		width: 80,
+	// 		cell: EventTypeCell,
+	// 		sort: true
+	// 	},
+	// 	{
+	// 		id: 'ppTotal',
+	// 		header: { text: '各リターン品支援額・人数' },
+	// 		cell: ReturnItemCell,
+	// 		width: 540
+	// 	}
+	// ];
+	// /** @type {import("@svar-ui/svelte-grid").ISortMarks} */
+	// const sortMarks = {
+	// 	id: { order: 'asc' },
+	// 	// type: { order: 'asc' },
+	// 	total: { order: 'desc' },
+	// 	totalpatrons: { order: 'desc' },
+	// 	averageFund: { order: 'desc' },
+	// 	period: { order: 'asc' }
+	// };
+	// // const left = 4; // freeze 5 colns
+	// const left = 1;
+	// let localGrid = $state();
+
+	// // let stores;
+	// // function init(api) {
+	// // 	stores = api.getStores();
+	// // 	console.log('***DataStore***', stores);
+	// // }
 </script>
 
 <!-- <ProjectOverview /> -->
@@ -95,11 +102,42 @@
 	<header>
 		<h1>ヒロインズ &nbsp; クラファ データ</h1>
 	</header>
-	<ProjectSelector grid={localGrid} />
-
+	<ProjectSelector {table} />
 	<section>
 		<div class="tbContainer">
-			<Willow>
+			<Datatable basic headless {table}>
+				<table class="dt">
+					<thead>
+						<tr>
+							<th class="narrow"> # </th>
+							<ThSortCustom {table} field="member">メンバー</ThSortCustom>
+							<ThSortCustom {table} field="total">総支援額</ThSortCustom>
+							<ThSortCustom {table} field="totalpatrons">支援者数</ThSortCustom>
+							<ThSortCustom {table} field="averageFund">平均支援額</ThSortCustom>
+							<ThSortCustom {table} field="period">クラファ期間</ThSortCustom>
+							<th>イベント</th>
+							<th>各リターン品支援額・人数</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each table.rows as row, i}
+							<tr>
+								<td class="narrow"> {i + 1} </td>
+								<td class="GpMbCell"><GroupMemberCell {row} /></td>
+								<td><TotalFundCell {row} /></td>
+								<td style="text-align: right; ">{row.totalpatrons}</td>
+								<td style="text-align: right; ">
+									{MoneyString(row.averageFund.toFixed(0))}
+								</td>
+								<td><PeriodCell {row} /></td>
+								<td><EventTypeCell {row} /></td>
+								<td><ReturnItemCell {row} /></td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</Datatable>
+			<!-- <Willow>
 				<Grid
 					bind:this={localGrid}
 					{data}
@@ -110,7 +148,7 @@
 					columnStyle={(col) =>
 						col.id === 'totalpatrons' || col.id === 'averageFund' ? 'columnStyle' : ''}
 				/>
-			</Willow>
+			</Willow> -->
 		</div>
 	</section>
 
@@ -194,16 +232,40 @@
 		--wx-table-fixed-column-right-border: 3px solid #e6e6e6;
 	}
 
-	:global(.wx-row:nth-child(even)) {
+	/* :global(.wx-row:nth-child(even)) {
 		--wx-background: hsl(0, 0%, 97%);
-	}
-	/*  this is recommended officially but didnot work as --wx-background took priority :/
-	:global(.rowStyle:nth-child(even)) {
-		background-color: cyan;
 	} */
 
-	:global(.columnStyle) {
-		text-align: end;
+	.dt {
+		border-collapse: collapse;
+	}
+	.dt :global(thead th) {
+		/* background-color: var(--bg); */
+		background-color: var(--bg-emph2);
+		border-left: 1px solid var(--tb-border-color);
+	}
+
+	.dt :global(thead th:first-child) {
+		border-left: none;
+		border-right: 1px solid var(--tb-border-color);
+	}
+
+	.dt td {
+		padding: 0.4em;
+		border: 1px solid var(--tb-border-color);
+	}
+
+	.dt .GpMbCell {
+		min-width: 12em;
+	}
+
+	.dt tbody tr:hover {
+		background: var(--weak-hilight);
+	}
+
+	.dt .narrow {
+		text-align: right;
+		padding: 3px;
 	}
 
 	@media screen and (max-width: 999px) {

@@ -13,7 +13,9 @@
 <style>
 	.container {
 		display: grid;
-		grid-template-columns: 1fr 40px;
+		gap: 0.5em;
+		grid-template-columns: 1fr 3em;
+		min-width: 9em;
 	}
 
 	.container > div {
