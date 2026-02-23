@@ -2,10 +2,15 @@
 	// @ts-nocheck
 
 	import { MoneyString, gpMap, mbSet, yrSelection } from '$lib/procData';
-	// import { SvelteSet } from 'svelte/reactivity';
-	let { grid } = $props();
 
-	const gps = [...gpMap.keys()];
+	import { check } from '@vincjo/datatables';
+
+	let { table } = $props();
+
+	const collator = new Intl.Collator('ja', { sensitivity: 'base', usage: 'sort' });
+
+	const gps = [...gpMap.keys()].toSorted(collator.compare);
+	// $inspect('gps', gps);
 	let gpFilt = $state(gps);
 	let gpResetBtnClass = $state('reset-gp');
 	let mbFilt = $state('');
@@ -14,46 +19,37 @@
 	let maxFundFilt = $state(200000);
 	let members = $state([...mbSet]);
 
-	const when = (cond, obj) => (cond ? obj : {});
+	// const when = (cond, obj) => (cond ? obj : {});
 
+	let filters = {
+		group: table.createFilter('group', (g, lst) =>
+			lst.reduce((res, cur) => res || g.indexOf(cur) > -1, false)
+		),
+		member: table.createFilter('member', check.isEqualTo),
+		eventYear: table.createFilter('eventYear', check.isEqualTo),
+		minFund: table.createFilter('total', check.isGreaterThanOrEqualTo),
+		maxFund: table.createFilter('total', check.isLessThanOrEqualTo)
+	};
+
+	// $inspect('mbFilt', mbFilt);
 	let filtObj = $derived({
-		...when(gpFilt.length < gps.length, { group: gpFilt }),
-		...when(mbFilt !== '', { member: mbFilt }),
-		...when(yrFilt !== '', { eventYear: Number(yrFilt) }),
+		group: gpFilt.length < gps.length ? gpFilt : null,
+		member: mbFilt.length !== 0 ? mbFilt : null,
+		eventYear: yrFilt !== '' ? Number(yrFilt) : null,
 		minFund: minFundFilt * 1000,
 		maxFund: maxFundFilt * 1000
 	});
 
 	function handleFilter() {
-		const filters = Object.keys(filtObj).map((key) => {
-			const value = filtObj[key];
-			console.log(filtObj);
-			switch (key) {
-				case 'minFund': {
-					return (v) => v.total >= value;
-				}
-				case 'maxFund': {
-					return (v) => v.total <= value;
-				}
-				case 'group': {
-					return (v) => value.reduce((res, cur) => res || v[key].indexOf(cur) > -1, false);
-				}
-				default: {
-					return (v) => v[key] === value;
-				}
+		console.log(filtObj);
+		for (const key of Object.keys(filtObj)) {
+			if (filtObj[key] === null) {
+				filters[key].clear();
+			} else {
+				filters[key].value = filtObj[key];
+				filters[key].set();
 			}
-		});
-		// console.log('Created filter: ', filters);
-
-		const filter = (obj) => {
-			for (let i = 0; i < filters.length; i++) {
-				if (!filters[i](obj)) {
-					return false;
-				}
-			}
-			return true;
-		};
-		grid.exec('filter-rows', { filter });
+		}
 	}
 
 	function clear() {
@@ -63,7 +59,7 @@
 		minFundFilt = 400;
 		maxFundFilt = 20000;
 		members = [...mbSet];
-		grid.exec('filter-rows', {});
+		handleFilter();
 	}
 
 	function repopulateMbList() {
@@ -98,7 +94,7 @@
 			</div>
 			<select id="gpFilter" bind:value={gpFilt} onchange={repopulateMbList} multiple size="6">
 				<!-- <option value=""> 全部 </option> -->
-				{#each gpMap.keys() as gp (gp)}
+				{#each gps as gp (gp)}
 					<option value={gp}> {gp} </option>
 				{/each}
 			</select>
@@ -119,7 +115,7 @@
 
 	<div class="filter-group">
 		<label>
-			実施年
+			イベント実施年
 			<select bind:value={yrFilt}>
 				<option value="">全部</option>
 				{#each yrSelection as yr (yr)}

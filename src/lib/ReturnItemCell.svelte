@@ -13,7 +13,9 @@
 		</div>
 	{/each}
 	{#if row.pricePatrons.length < 7}
-		<div class="col"></div>
+		{#each { length: 7 - row.pricePatrons.length }, row}
+			<div class="col"></div>
+		{/each}
 	{/if}
 	<div class="final">
 		<span style="font-size:small;"> 合計金額 </span><br />
