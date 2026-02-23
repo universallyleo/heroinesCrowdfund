@@ -7,7 +7,10 @@
 
 	let { table } = $props();
 
-	const gps = [...gpMap.keys()];
+	const collator = new Intl.Collator('ja', { sensitivity: 'base', usage: 'sort' });
+
+	const gps = [...gpMap.keys()].toSorted(collator.compare);
+	// $inspect('gps', gps);
 	let gpFilt = $state(gps);
 	let gpResetBtnClass = $state('reset-gp');
 	let mbFilt = $state('');
@@ -28,7 +31,7 @@
 		maxFund: table.createFilter('total', check.isLessThanOrEqualTo)
 	};
 
-	$inspect('mbFilt', mbFilt);
+	// $inspect('mbFilt', mbFilt);
 	let filtObj = $derived({
 		group: gpFilt.length < gps.length ? gpFilt : null,
 		member: mbFilt.length !== 0 ? mbFilt : null,
@@ -91,7 +94,7 @@
 			</div>
 			<select id="gpFilter" bind:value={gpFilt} onchange={repopulateMbList} multiple size="6">
 				<!-- <option value=""> 全部 </option> -->
-				{#each gpMap.keys() as gp (gp)}
+				{#each gps as gp (gp)}
 					<option value={gp}> {gp} </option>
 				{/each}
 			</select>
@@ -112,7 +115,7 @@
 
 	<div class="filter-group">
 		<label>
-			実施年
+			イベント実施年
 			<select bind:value={yrFilt}>
 				<option value="">全部</option>
 				{#each yrSelection as yr (yr)}

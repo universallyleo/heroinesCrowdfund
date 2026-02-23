@@ -185,7 +185,7 @@ export const processedData = data.reduce((arr, o, i) => {
 
 	return arr;
 }, []);
-console.log(processedData);
+// console.log(processedData);
 
 // export const processedData = [];
 export function MoneyString(val, truncAtThousand = false) {
