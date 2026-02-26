@@ -4,8 +4,6 @@
 	import xicon from '$lib/assets/X_icon.svg';
 	import ProjectSelector from '$lib/ProjectSelector.svelte';
 
-	// import { Grid } from '@svar-ui/svelte-grid';
-	// import { Willow } from '@svar-ui/svelte-core';
 	import { MoneyString, processedData } from '$lib/procData';
 	import TotalFundCell from '$lib/TotalFundCell.svelte';
 	import PeriodCell from '$lib/PeriodCell.svelte';
@@ -14,18 +12,28 @@
 	import EventTypeCell from '$lib/EventTypeCell.svelte';
 
 	import { TableHandler, Datatable, RowsPerPage, RowCount, Pagination } from '@vincjo/datatables';
+	import { onMount } from 'svelte';
 	import ThSortCustom from '$lib/ThSortCustom.svelte';
-
-	// import { readable } from 'svelte/store';
 
 	const data = processedData;
 	// console.log('called from DT.svelte', data);
-
 	const table = new TableHandler(data);
-	table.createView([
-		{ index: 0, isFrozen: true },
-		{ index: 1, isFrozen: true }
-	]);
+	// !! following is not working, throws strange error
+	// onMount(() => {
+	// 	table.createView([
+	// 		{ index: 0, isFrozen: true },
+	// 		{ index: 1, isFrozen: true }
+	// 	]);
+	// });
+
+	const fundColor = (total) =>
+		total < 1_000_000
+			? '#fff7ee'
+			: total < 4_000_000
+				? '#ffcccf'
+				: total < 8_000_000
+					? '#ffb995'
+					: '#ff7200';
 </script>
 
 <!-- <ProjectOverview /> -->
@@ -41,7 +49,6 @@
 				{#snippet header()}
 					<RowsPerPage {table} options={[5, 10, 20, 50, 100, 200, 300]} />
 				{/snippet}
-				<!-- https://svelte.dev/docs/svelte/snippet -->
 				<table class="dt">
 					<thead>
 						<tr>
@@ -60,7 +67,11 @@
 							<tr>
 								<td class="narrow frozen"> {i + 1} </td>
 								<td class="GpMbCell frozen"><GroupMemberCell {row} /></td>
-								<td><TotalFundCell {row} /></td>
+								<td>
+									<span class="totalfund" style="--totalFundBGC:{fundColor(row.total)}">
+										{MoneyString(row.total)}
+									</span>
+								</td>
 								<td style="text-align: right; ">{row.totalpatrons}</td>
 								<td style="text-align: right; ">
 									{MoneyString(row.averageFund.toFixed(0))}
@@ -77,20 +88,7 @@
 					<RowCount {table} />
 					<Pagination {table} />
 				{/snippet}
-				<!-- https://svelte.dev/docs/svelte/snippet -->
 			</Datatable>
-			<!-- <Willow>
-				<Grid
-					bind:this={localGrid}
-					{data}
-					{columns}
-					{sortMarks}
-					split={{ left }}
-					sizes={{ rowHeight: 58 }}
-					columnStyle={(col) =>
-						col.id === 'totalpatrons' || col.id === 'averageFund' ? 'columnStyle' : ''}
-				/>
-			</Willow> -->
 		</div>
 	</section>
 
@@ -199,6 +197,17 @@
 
 	.dt .frozen {
 		background: var(--bg);
+	}
+
+	.totalfund {
+		background-color: var(--totalFundBGC);
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		font-size: large;
+		font-weight: bold;
+		padding: 0.4em;
+		height: 100%;
 	}
 
 	@media screen and (max-width: 999px) {
