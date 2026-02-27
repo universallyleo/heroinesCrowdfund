@@ -5,7 +5,6 @@
 	import ProjectSelector from '$lib/ProjectSelector.svelte';
 
 	import { MoneyString, processedData } from '$lib/procData';
-	import TotalFundCell from '$lib/TotalFundCell.svelte';
 	import PeriodCell from '$lib/PeriodCell.svelte';
 	import GroupMemberCell from '$lib/GroupMemberCell.svelte';
 	import ReturnItemCell from '$lib/ReturnItemCell.svelte';
