@@ -92,7 +92,7 @@
 	</section>
 
 	<footer>
-		<div>更新：2026-02-24</div>
+		<div>更新：2026-02-28</div>
 		<div>
 			データソース: camp-fire
 			<a href="https://camp-fire.jp/profile/heroines"> heroines </a>

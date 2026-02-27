@@ -41,6 +41,47 @@
 		"eventYear": 2026
 	},
 	{
+		"url": "https://camp-fire.jp/projects/920451/view",
+		"title": "iLiFE!【虹羽みに】生誕祭応援プロジェクト",
+		"total": 13873432,
+		"rest": 581,
+		"per": "終了",
+		"pricePatrons": [
+			{
+				"price": 3000,
+				"patrons": 57
+			},
+			{
+				"price": 6000,
+				"patrons": 8
+			},
+			{
+				"price": 10000,
+				"patrons": 449
+			},
+			{
+				"price": 50000,
+				"patrons": 46
+			},
+			{
+				"price": 100000,
+				"patrons": 14
+			},
+			{
+				"price": 300000,
+				"patrons": 18
+			}
+		],
+		"subject": {
+			"group": "iLiFE!",
+			"member": "虹羽みに",
+			"type": "生誕祭"
+		},
+		"start": "2025-01-21",
+		"end": "2026-02-26",
+		"eventYear": 2026
+	},
+	{
 		"url": "https://camp-fire.jp/projects/919193/view",
 		"title": "のんふぃく！【澪織にいな】生誕祭応援プロジェクト",
 		"total": 3374217,
