@@ -106,6 +106,8 @@
 			<a href="https://x.com/55gohan06">
 				<img width="32" src={xicon} alt="Twitter" />
 			</a>
+			&nbsp;&nbsp;
+			<a href="https://universallyleo.github.io/heroinesLeague/"> ヒロインズリーグ記録 </a>
 		</div>
 	</footer>
 </main>
