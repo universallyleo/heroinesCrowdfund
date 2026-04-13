@@ -1,5 +1,46 @@
 [
 	{
+		"url": "https://camp-fire.jp/projects/932781/view",
+		"title": "夜光性アミューズ【みぽたぽた】生誕祭応援プロジェクト",
+		"total": 4755511,
+		"rest": 154,
+		"per": "終了",
+		"pricePatrons": [
+			{
+				"price": 3000,
+				"patrons": 3
+			},
+			{
+				"price": 6000,
+				"patrons": 1
+			},
+			{
+				"price": 10000,
+				"patrons": 114
+			},
+			{
+				"price": 50000,
+				"patrons": 30
+			},
+			{
+				"price": 100000,
+				"patrons": 9
+			},
+			{
+				"price": 300000,
+				"patrons": 4
+			}
+		],
+		"subject": {
+			"group": "夜光性アミューズ",
+			"member": "みぽたぽた",
+			"type": "生誕祭"
+		},
+		"start": "2026-03-06",
+		"end": "2026-04-08",
+		"eventYear": 2026
+	},
+	{
 		"url": "https://camp-fire.jp/projects/928823/view",
 		"title": "iLiFE!【純嶺みき】生誕祭応援プロジェクト",
 		"total": 14462412,
@@ -38,6 +79,47 @@
 		},
 		"start": "2026-02-27",
 		"end": "2026-03-30",
+		"eventYear": 2026
+	},
+	{
+		"url": "https://camp-fire.jp/projects/926184/view",
+		"title": "LADYBABY【神黎ミア】生誕祭応援プロジェクト",
+		"total": 2640527,
+		"rest": 104,
+		"per": "終了",
+		"pricePatrons": [
+			{
+				"price": 3000,
+				"patrons": 9
+			},
+			{
+				"price": 6000,
+				"patrons": 3
+			},
+			{
+				"price": 10000,
+				"patrons": 69
+			},
+			{
+				"price": 50000,
+				"patrons": 19
+			},
+			{
+				"price": 100000,
+				"patrons": 6
+			},
+			{
+				"price": 300000,
+				"patrons": 1
+			}
+		],
+		"subject": {
+			"group": "LADYBABY",
+			"member": "神黎ミア",
+			"type": "生誕祭"
+		},
+		"start": "2026-03-04",
+		"end": "2026-04-13",
 		"eventYear": 2026
 	},
 	{
