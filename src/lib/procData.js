@@ -143,6 +143,24 @@ export const gpMap = new Map();
 export const mbSet = new Set();
 export const yrSelection = new Set();
 
+/**
+ * @typedef {ProcessedData}
+ * @property {number} id
+ * @property {string} group this can involved multiple groups, like  "iLife!/i-COL"
+ * @property {string} member
+ * @property {string} type  生誕祭 とか
+ * @property {number} total funded amount
+ * @property {number} totalpatrons
+ * @property {string} url
+ * @property {string} start
+ * @property {string} end
+ * @property {number} eventYear
+ * @property {float} averageFund
+ * @property {number} period
+ * @property {number} ppTotal
+ * @property {Object} pricePatrons
+ */
+
 export const processedData = data.reduce((arr, o, i) => {
 	if (o.per !== '終了') return arr;
 	const r = Object.assign(
@@ -167,19 +185,23 @@ export const processedData = data.reduce((arr, o, i) => {
 	for (const m of mbs) {
 		mbSet.add(m);
 	}
-	let idx = Math.max(r.group.indexOf('/'), r.group.indexOf('／'));
-	let gps =
-		idx > -1 ? [r.group.slice(0, idx).trim(), r.group.slice(idx + 1).trim()] : [r.group.trim()];
-	// if (idx > -1) {
-	// 	console.log(gps);
-	// }
+	// let idx = Math.max(r.group.indexOf('/'), r.group.indexOf('／'));
+	// let gps =
+	// 	idx > -1 ? [r.group.slice(0, idx).trim(), r.group.slice(idx + 1).trim()] : [r.group.trim()];
+	// // if (idx > -1) {
+	// // 	console.log(gps);
+	// // }
+	const gps = r.group.split(/[/／]/).map((x) => x.trim());
+	r.group = gps;
 	for (const gp of gps) {
-		if (!gpMap.has(gp)) {
-			gpMap.set(gp, new Set(mbs));
-		} else {
-			for (const m of mbs) {
-				gpMap.get(gp).add(m);
-			}
+		let entry = gpMap.get(gp);
+		if (!entry) {
+			entry = { mbs: new Set(mbs), count: 0 };
+			gpMap.set(gp, entry);
+		}
+		entry.count++;
+		for (const m of mbs) {
+			entry.mbs.add(m);
 		}
 	}
 

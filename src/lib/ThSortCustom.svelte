@@ -4,10 +4,22 @@
 	const sort = table.createSort(field);
 </script>
 
-<th onclick={() => sort.set()} class={{ active: sort.isActive }}>
+<th
+	onclick={() => sort.set()}
+	class={{ active: sort.isActive }}
+	aria-sort={sort.direction === 'asc'
+		? 'ascending'
+		: sort.direction === 'desc'
+			? 'descending'
+			: 'none'}
+>
 	<div class="flex">
 		<strong>{@render children()}</strong>
-		<span class={[{ asc: sort.direction === 'asc' }, { desc: sort.direction === 'desc' }]}> </span>
+		<span
+			class="sort-indicator"
+			class:asc={sort.direction === 'asc'}
+			class:desc={sort.direction === 'desc'}
+		></span>
 	</div>
 </th>
 
@@ -30,29 +42,29 @@
 		justify-content: flex-start;
 		height: 100%;
 	}
-	span {
+	.sort-indicator {
 		padding-left: 8px;
 	}
-	span:before,
-	span:after {
+	.sort-indicator:before,
+	.sort-indicator:after {
 		border: 4px solid transparent;
 		content: '';
 		display: block;
 		height: 0;
 		width: 0;
 	}
-	span:before {
+	.sort-indicator:before {
 		border-bottom-color: #aaa;
 		margin-top: 2px;
 	}
-	span:after {
+	.sort-indicator:after {
 		border-top-color: #aaa;
 		margin-top: 2px;
 	}
-	th.active span.asc:before {
+	th.active .sort-indicator.asc:before {
 		border-bottom-color: #222;
 	}
-	th.active span.desc:after {
+	th.active .sort-indicator.desc:after {
 		border-top-color: #222;
 	}
 </style>

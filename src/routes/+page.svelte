@@ -19,10 +19,10 @@
 	const table = new TableHandler(data);
 	// !! following is not working, throws strange error
 	// onMount(() => {
-	// 	table.createView([
-	// 		{ index: 0, isFrozen: true },
-	// 		{ index: 1, isFrozen: true }
-	// 	]);
+	table.createView([
+		{ index: 0, isFrozen: true },
+		{ index: 1, isFrozen: true }
+	]);
 	// });
 
 	const fundColor = (total) =>
@@ -116,7 +116,7 @@
 	main {
 		display: grid;
 		height: 90vh;
-		grid-template-columns: max(12%, 8em) 1fr;
+		grid-template-columns: max(15%, 10em) 1fr;
 		grid-template-rows: auto 1fr auto;
 		gap: 12px;
 		padding: 12px;

@@ -98,7 +98,7 @@
 			},
 			{
 				"price": 10000,
-				"patrons": 91
+				"patrons": 90
 			},
 			{
 				"price": 50000,
@@ -106,11 +106,11 @@
 			},
 			{
 				"price": 100000,
-				"patrons": 2
+				"patrons": 7
 			},
 			{
 				"price": 300000,
-				"patrons": 6
+				"patrons": 2
 			}
 		],
 		"subject": {

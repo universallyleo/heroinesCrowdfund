@@ -4,6 +4,7 @@
 	import { MoneyString, gpMap, mbSet, yrSelection } from '$lib/procData';
 
 	import { check } from '@vincjo/datatables';
+	import GroupFilter from './GroupFilter.svelte';
 
 	let { table } = $props();
 
@@ -42,7 +43,7 @@
 
 	function handleFilter() {
 		console.log(filtObj);
-		for (const key of Object.keys(filtObj)) {
+		for (const key in filtObj) {
 			if (filtObj[key] === null) {
 				filters[key].clear();
 			} else {
@@ -62,43 +63,21 @@
 		handleFilter();
 	}
 
-	function repopulateMbList() {
-		[members, gpResetBtnClass] =
+	// Effect to repopulate member list when group filter changes
+	$effect(() => {
+		members =
 			gpFilt.length === gps.length
-				? [[...mbSet], 'reset-gp']
-				: [
-						[...gpFilt.reduce((res, gp) => res.union(gpMap.get(gp)), new Set())],
-						'reset-gp-inactive'
-					];
-	}
+				? [...mbSet]
+				: [...gpFilt.reduce((res, gp) => res.union(gpMap.get(gp).mbs), new Set())];
+		gpResetBtnClass = gpFilt.length === gps.length ? 'reset-gp' : 'reset-gp-inactive';
+	});
 </script>
 
 <aside>
 	<h3>絞り込む</h3>
 
-	<div class="filter-group">
-		<label>
-			<div class="label-inline">
-				<span>グループ</span>
-				<button
-					type="button"
-					class={gpResetBtnClass}
-					onclick={() => {
-						gpFilt = gps;
-						repopulateMbList();
-					}}
-					title="全部"
-				>
-					全部
-				</button>
-			</div>
-			<select id="gpFilter" bind:value={gpFilt} onchange={repopulateMbList} multiple size="6">
-				<!-- <option value=""> 全部 </option> -->
-				{#each gps as gp (gp)}
-					<option value={gp}> {gp} </option>
-				{/each}
-			</select>
-		</label>
+	<div class="filter-group group-filter-container">
+		<GroupFilter {gps} bind:selected={gpFilt} />
 	</div>
 
 	<div class="filter-group">
@@ -238,15 +217,7 @@
 		min-width: 0;
 	}
 
-	#gpFilter {
-		size: 6;
-	}
-
 	@media screen and (max-width: 999px) {
-		#gpFilter {
-			size: 3;
-		}
-
 		.filter-group {
 			margin-bottom: 0.2em;
 		}
@@ -265,6 +236,10 @@
 			width: auto;
 			min-width: 60%;
 			flex: 0 0 auto;
+		}
+
+		.group-filter-container > label {
+			display: block !important;
 		}
 
 		/* Make range-label a single row on small screens */
