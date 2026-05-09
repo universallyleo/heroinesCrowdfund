@@ -33,6 +33,8 @@
 				: total < 8_000_000
 					? '#ffb995'
 					: '#ff7200';
+
+	const buildDate = __BUILD_DATE__.slice(0, 10);
 </script>
 
 <!-- <ProjectOverview /> -->
@@ -92,7 +94,7 @@
 	</section>
 
 	<footer>
-		<div>更新：2026-04-14</div>
+		<div>更新：{buildDate}</div>
 		<div>
 			データソース: camp-fire
 			<a href="https://camp-fire.jp/profile/heroines"> heroines </a>
