@@ -16,14 +16,37 @@
 
 	const data = processedData;
 	// console.log('called from DT.svelte', data);
-	const table = new TableHandler(data);
-	// !! following is not working, throws strange error
+	const table = new TableHandler(data, {
+		i18n: {
+			search: 'Search...',
+			show: '',
+			entries: '件表示／ページ',
+			filter: 'Filter',
+			rowCount: '全 {total} 件中 {start}〜{end} 件を表示',
+			noRows: 'No entries found',
+			previous: '‹ 前',
+			next: '次 ›',
+			selectedCount: '全 {total} 件中 {count}件.'
+		}
+	});
+	// !! using vinjo's frozen will make the frozen columns resizes (widen) itself when another column trigger a sort
 	// onMount(() => {
-	table.createView([
-		{ index: 0, isFrozen: true },
-		{ index: 1, isFrozen: true }
-	]);
+	// table.createView([
+	// 	{ index: 0, isFrozen: true },
+	// 	{ index: 1, isFrozen: true }
+	// ]);
 	// });
+	// following is an attempt to fix this issue, but it is not perfect
+
+	let htmlTbl = $state(null);
+	onMount(() => {
+		const frozen = htmlTbl.querySelectorAll(`.narrow, .frozen`);
+		for (const cell of frozen) {
+			cell.style.position = 'sticky';
+			cell.style.left = '0px'; // TODO: should calculate this correctly, now it will just push all frozen column to 0px
+			cell.style.zIndex = '15';
+		}
+	});
 
 	const fundColor = (total) =>
 		total < 1_000_000
@@ -50,11 +73,11 @@
 				{#snippet header()}
 					<RowsPerPage {table} options={[5, 10, 20, 50, 100, 200, 300]} />
 				{/snippet}
-				<table class="dt">
+				<table class="dt" bind:this={htmlTbl}>
 					<thead>
 						<tr>
-							<th class="narrow"> # </th>
-							<ThSortCustom {table} field="member">メンバー</ThSortCustom>
+							<th class="narrow frozenHeader"> # </th>
+							<ThSortCustom {table} field="member" frozen={true}>メンバー</ThSortCustom>
 							<ThSortCustom {table} field="total">総支援額</ThSortCustom>
 							<ThSortCustom {table} field="totalpatrons">支援者数</ThSortCustom>
 							<ThSortCustom {table} field="averageFund">平均支援額</ThSortCustom>
@@ -84,7 +107,6 @@
 						{/each}
 					</tbody>
 				</table>
-
 				{#snippet footer()}
 					<RowCount {table} />
 					<Pagination {table} />
@@ -200,6 +222,11 @@
 
 	.dt .frozen {
 		background: var(--bg);
+	}
+
+	/* does not do anything, just for querySelector to select frozen header */
+	.dt .frozenHeader {
+		background-color: var(--bg-emph2);
 	}
 
 	.totalfund {

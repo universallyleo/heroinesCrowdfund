@@ -1,12 +1,14 @@
 <script>
-	let { table, field, children } = $props();
+	let { table, field, children, zindex = 7, frozen = false } = $props();
 
 	const sort = table.createSort(field);
 </script>
 
 <th
+	data-field={field}
+	class={{ active: sort.isActive, frozen }}
+	style="z-index: {zindex}"
 	onclick={() => sort.set()}
-	class={{ active: sort.isActive }}
 	aria-sort={sort.direction === 'asc'
 		? 'ascending'
 		: sort.direction === 'desc'
@@ -25,11 +27,14 @@
 
 <style>
 	th {
-		padding: 8px 20px;
-		white-space: nowrap;
+		white-space: normal;
+		word-break: break-word;
 		user-select: none;
 		border-bottom: 1px solid var(--grey, #e0e0e0);
 		cursor: pointer;
+		position: sticky;
+		top: 0;
+		z-index: 10;
 	}
 	th strong {
 		white-space: pre-wrap;
