@@ -108,7 +108,7 @@
 		<span> 支援額範囲 (~千円) : </span><br />
 		<label class="range-label">
 			<div class="label-text">
-				最小: {MoneyString(minFundFilt)}k
+				最小: {MoneyString(minFundFilt)}
 			</div>
 			<input
 				type="range"
@@ -121,7 +121,7 @@
 		</label>
 		<label class="range-label">
 			<div class="label-text">
-				最大: {MoneyString(maxFundFilt)}k
+				最大: {MoneyString(maxFundFilt)}
 			</div>
 			<input
 				type="range"
