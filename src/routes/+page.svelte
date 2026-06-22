@@ -60,11 +60,24 @@
 	const buildDate = __BUILD_DATE__.slice(0, 10);
 </script>
 
-<!-- <ProjectOverview /> -->
+<svelte:head>
+	<title>HEROINES クラファ記録</title>
+	<meta name="description" content="ヒロインズ クラウドファンディング記録" />
+	<meta property="og:site_name" content="ヒロインズ クラウドファンディング記録" />
+	<meta property="og:title" content="ヒロインズ クラウドファンディング記録" />
+	<script type="application/ld+json">
+        {JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'WebSite',
+            name: 'ヒロインズ クラウドファンディング記録',
+            url: 'https://universallyleo.github.io/heroinesCrowdfund/'
+        })}
+	</script>
+</svelte:head>
 
 <main>
 	<header>
-		<h1>ヒロインズ &nbsp; クラファ データ</h1>
+		<h1>ヒロインズ &nbsp; クラファ 記録</h1>
 	</header>
 	<ProjectSelector {table} />
 	<section>
