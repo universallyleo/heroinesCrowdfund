@@ -64,7 +64,7 @@ jobs:
 
       - name: Upload scrape report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: scrape-report-${{ github.run_id }}
           path: ${{ runner.temp }}/heroines-scrape-output
