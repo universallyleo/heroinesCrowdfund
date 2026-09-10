@@ -1,0 +1,92 @@
+name: Update scraped crowdfunding data
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Scrape and upload a report without changing the repository'
+        required: false
+        type: boolean
+        default: false
+      full_scan:
+        description: 'Ignore the checkpoint and scan every listing page'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: scrape-data
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    outputs:
+      database_changed: ${{ steps.apply.outputs.database_changed || 'false' }}
+      progress_changed: ${{ steps.apply.outputs.progress_changed || 'false' }}
+      commit_sha: ${{ steps.apply.outputs.commit_sha }}
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v6
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.x'
+
+      - name: Install scraper dependencies
+        run: python -m pip install requests beautifulsoup4
+
+      - name: Run scraper tests
+        run: python -m unittest discover -s scrape_data -p 'test_*.py' -v
+
+      - name: Scrape and stage candidates
+        env:
+          OUTPUT_DIR: ${{ runner.temp }}/heroines-scrape-output
+        run: |
+          mkdir -p "$OUTPUT_DIR"
+          scan_args=()
+          if [[ "${{ inputs.full_scan }}" == "true" ]]; then
+            scan_args+=(--full-scan)
+          fi
+          python scrape_data/scraper.py \
+            --database src/lib/data/heroinesCF.json \
+            --progress scrape_data/scrape_progress.json \
+            --output-dir "$OUTPUT_DIR" \
+            "${scan_args[@]}"
+
+      - name: Upload scrape report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scrape-report-${{ github.run_id }}
+          path: ${{ runner.temp }}/heroines-scrape-output
+          if-no-files-found: ignore
+
+      - name: Apply staged data and push
+        id: apply
+        if: ${{ success() && !inputs.dry_run }}
+        env:
+          OUTPUT_DIR: ${{ runner.temp }}/heroines-scrape-output
+        run: |
+          python scrape_data/apply_update.py \
+            --output-dir "$OUTPUT_DIR" \
+            --database src/lib/data/heroinesCF.json \
+            --progress scrape_data/scrape_progress.json \
+            --backup-root src/lib/data/old \
+            --repo-root . \
+            --github-output "$GITHUB_OUTPUT"
+
+  rebuild:
+    if: ${{ needs.scrape.outputs.database_changed == 'true' }}
+    needs: scrape
+    uses: ./.github/workflows/build.yml
+    with:
+      checkout-ref: ${{ needs.scrape.outputs.commit_sha }}

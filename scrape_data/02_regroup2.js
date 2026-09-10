@@ -9,7 +9,7 @@ const index = new Map(
 		.map((x) => [x.url, x])
 );
 
-const base = await Bun.file('20260114.json').json();
+const base = await Bun.file('heroinesCF.json').json();
 
 // const newbase = base.map((x) => {
 // 	return { ...x, eventYear: Number(x.sub.slice(0, 4)) };

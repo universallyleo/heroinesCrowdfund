@@ -121,7 +121,7 @@ const testdata = [
 	}
 ];
 
-import data from '$lib/data/20260114.json';
+import data from '$lib/data/heroinesCF.json';
 
 /**
  * @param  {Object<string, any>} o
