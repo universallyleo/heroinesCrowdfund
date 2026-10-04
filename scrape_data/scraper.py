@@ -20,7 +20,7 @@ import requests
 from bs4 import BeautifulSoup
 
 
-LISTING_URL = "https://camp-fire.jp/profile/heroines/projects"
+LISTING_URL = "https://camp-fire.jp/profile/heroines/projects/post"
 DEFAULT_CHECKPOINT_URL = "https://camp-fire.jp/projects/956928/view"
 DEFAULT_DATABASE_PATH = Path("src/lib/data/heroinesCF.json")
 DEFAULT_PROGRESS_PATH = Path("scrape_data/scrape_progress.json")
@@ -197,7 +197,9 @@ def _first_attribute(soup: BeautifulSoup, selector: str, attribute: str) -> str:
 
 def parse_listing_page(html: str, page_url: str) -> tuple[list[ProjectSummary], str | None]:
     soup = BeautifulSoup(html, "html.parser")
-    cards = soup.select(".project-card-content[data_project_id], .project-card-content")
+    cards = soup.select(
+        ".project-grid-item, .project-card-content[data_project_id], .project-card-content"
+    )
     if not cards:
         raise DiscoveryError(f"listing page has no project cards: {page_url}")
 
@@ -225,11 +227,11 @@ def parse_listing_page(html: str, page_url: str) -> tuple[list[ProjectSummary], 
 
         title = (
             link.get("title", "").strip()
-            or _first_text(card, [".box-title h4", ".box-title"])
+            or _first_text(card, ["h2.name", ".box-title h4", ".box-title"])
             or ""
         )
-        description = _first_text(card, [".box-title .sub p", ".sub p"])
-        status = _first_text(card, [".overview .per", ".per"])
+        description = _first_text(card, [".short-blurb", ".box-title .sub p", ".sub p"])
+        status = _first_text(card, [".footer-item.per", ".overview .per", ".per"])
         if not title or not status:
             raise DiscoveryError(f"project card is missing title or status: {url}")
 

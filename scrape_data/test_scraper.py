@@ -7,6 +7,7 @@ import requests
 
 from scraper import (
     HttpFetcher,
+    LISTING_URL,
     ParseError,
     discover_listing,
     merge_records,
@@ -36,6 +37,33 @@ LISTING_PAGE_1 = """
   </div>
 </section>
 <a href="/profile/heroines/projects?page=2">次のページ &gt;</a>
+"""
+
+
+NEW_LISTING_PAGE = """
+<section class="section">
+  <h1>heroinesさんの投稿したプロジェクト</h1>
+  <ul class="project-grid">
+    <li class="project-grid-item">
+      <a class="card link" href="/projects/300/view" title="新しいプロジェクト">
+        <div class="body"><h2 class="name">新しいプロジェクト</h2></div>
+        <div class="footer-area">
+          <div class="footer-item total"><small>現在</small> 123,000<span>円</span></div>
+          <div class="footer-item rest"><small>支援者</small> 12<span>人</span></div>
+          <div class="footer-item per"><small>残り</small> 終了</div>
+        </div>
+      </a>
+    </li>
+    <li class="project-grid-item">
+      <a class="card link" href="https://camp-fire.jp/projects/299/view" title="募集中のプロジェクト">
+        <div class="body"><h2 class="name">募集中のプロジェクト</h2></div>
+        <div class="footer-area">
+          <div class="footer-item per"><small>残り</small> 10日</div>
+        </div>
+      </a>
+    </li>
+  </ul>
+</section>
 """
 
 
@@ -94,6 +122,19 @@ class ScraperParsingTests(unittest.TestCase):
         self.assertEqual(summaries[0].status, "残り 10日")
         self.assertEqual(summaries[1].status, "残り 終了")
         self.assertEqual(next_url, "https://camp-fire.jp/profile/heroines/projects?page=2")
+
+    def test_parse_listing_page_extracts_new_project_grid_layout(self):
+        summaries, next_url = parse_listing_page(
+            NEW_LISTING_PAGE, "https://camp-fire.jp/profile/heroines/projects/post"
+        )
+
+        self.assertEqual(LISTING_URL, "https://camp-fire.jp/profile/heroines/projects/post")
+        self.assertEqual([summary.project_id for summary in summaries], ["300", "299"])
+        self.assertEqual(summaries[0].url, "https://camp-fire.jp/projects/300/view")
+        self.assertEqual(summaries[0].title, "新しいプロジェクト")
+        self.assertEqual(summaries[0].status, "残り 終了")
+        self.assertEqual(summaries[1].status, "残り 10日")
+        self.assertIsNone(next_url)
 
     def test_parse_project_page_aggregates_rewards_and_uses_description_year(self):
         record = parse_project_page(
@@ -229,7 +270,7 @@ class ScraperParsingTests(unittest.TestCase):
                 encoding="utf-8",
             )
             pages = {
-                "https://camp-fire.jp/profile/heroines/projects": listing,
+                "https://camp-fire.jp/profile/heroines/projects/post": listing,
                 "https://camp-fire.jp/projects/199/view": PROJECT_PAGE,
                 "https://camp-fire.jp/projects/198/view": "<html></html>",
             }
@@ -275,7 +316,7 @@ class ScraperParsingTests(unittest.TestCase):
                 encoding="utf-8",
             )
             pages = {
-                "https://camp-fire.jp/profile/heroines/projects": LISTING_PAGE_1,
+                "https://camp-fire.jp/profile/heroines/projects/post": LISTING_PAGE_1,
                 "https://camp-fire.jp/projects/198/view": PROJECT_PAGE,
             }
 

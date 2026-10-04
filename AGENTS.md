@@ -100,7 +100,7 @@ markup, title/member conventions, and event-year extraction may differ. Check re
 pages before onboarding an agency. If the existing parser does not fit, add a suitable
 page-scraper script/adapter and review orchestration, dependencies, validation, and GitHub
 Actions for required changes; do not assume selecting a different database is sufficient.
-The current automated discovery visits only `https://camp-fire.jp/profile/heroines/projects`;
+The current automated discovery visits only `https://camp-fire.jp/profile/heroines/projects/post`;
 the footer's imaginate attribution link is not an additional automated discovery source.
 
 ## Commands and deployment
