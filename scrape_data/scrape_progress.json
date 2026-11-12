@@ -1,41 +1,17 @@
 {
   "checkpointUrl": "https://camp-fire.jp/projects/990003/view",
   "pending": {
-    "983848": {
-      "url": "https://camp-fire.jp/projects/983848/view",
-      "title": "テンシンランマン【味園そら】生誕祭応援プロジェクト",
-      "description": "",
-      "status": "unfinished",
-      "lastAttemptAt": "2026-11-03T02:44:58Z",
-      "error": null
-    },
-    "985017": {
-      "url": "https://camp-fire.jp/projects/985017/view",
-      "title": "ハルカエコー【高坂りん】生誕祭応援プロジェクト",
-      "description": "",
-      "status": "unfinished",
-      "lastAttemptAt": "2026-11-03T02:44:56Z",
-      "error": null
-    },
     "985065": {
       "url": "https://camp-fire.jp/projects/985065/view",
       "title": "ラストシーン【天羽しおり】生誕祭応援プロジェクト",
       "description": "",
       "status": "unfinished",
-      "lastAttemptAt": "2026-11-03T02:44:53Z",
+      "lastAttemptAt": "2026-11-12T06:22:17Z",
       "error": null
     },
-    "988287": {
-      "url": "https://camp-fire.jp/projects/988287/view",
-      "title": "Ill【森緑藻】生誕祭応援プロジェクト",
-      "description": "",
-      "status": "unfinished",
-      "lastAttemptAt": "2026-11-03T02:44:47Z",
-      "error": null
-    },
-    "988646": {
-      "url": "https://camp-fire.jp/projects/988646/view",
-      "title": "ドレスコード【百宮みも】生誕祭応援プロジェクト",
+    "988569": {
+      "url": "https://camp-fire.jp/projects/988569/view",
+      "title": "MEGAFON【星野あみ】生誕祭応援プロジェクト",
       "description": "",
       "status": "unfinished",
       "lastAttemptAt": null,
@@ -46,7 +22,7 @@
       "title": "夜光性アミューズ【心恋きゅん】生誕祭応援プロジェクト",
       "description": "",
       "status": "unfinished",
-      "lastAttemptAt": "2026-11-03T02:44:41Z",
+      "lastAttemptAt": "2026-11-12T06:22:11Z",
       "error": null
     },
     "991472": {
@@ -54,7 +30,7 @@
       "title": "AdamLilith【夜宵やむ】生誕祭応援プロジェクト",
       "description": "",
       "status": "unfinished",
-      "lastAttemptAt": "2026-11-03T02:44:40Z",
+      "lastAttemptAt": "2026-11-12T06:22:09Z",
       "error": null
     },
     "991695": {
@@ -62,7 +38,7 @@
       "title": "CAL&RES【明日実まあや】生誕祭応援プロジェクト",
       "description": "",
       "status": "unfinished",
-      "lastAttemptAt": null,
+      "lastAttemptAt": "2026-11-12T06:22:07Z",
       "error": null
     },
     "991825": {
@@ -70,12 +46,20 @@
       "title": "Pastel Closet【柑乃あい】生誕祭応援プロジェクト",
       "description": "",
       "status": "unfinished",
-      "lastAttemptAt": null,
+      "lastAttemptAt": "2026-11-12T06:22:05Z",
       "error": null
     },
     "993640": {
       "url": "https://camp-fire.jp/projects/993640/view",
       "title": "パラレルサイダー【小坂みおん】生誕祭応援プロジェクト",
+      "description": "",
+      "status": "unfinished",
+      "lastAttemptAt": "2026-11-12T06:22:03Z",
+      "error": null
+    },
+    "993664": {
+      "url": "https://camp-fire.jp/projects/993664/view",
+      "title": "i-COL/iLiFE!【あいす】生誕祭応援プロジェクト",
       "description": "",
       "status": "unfinished",
       "lastAttemptAt": null,
@@ -84,6 +68,46 @@
     "994124": {
       "url": "https://camp-fire.jp/projects/994124/view",
       "title": "ハルカエコー【常盤うた】生誕祭応援プロジェクト",
+      "description": "",
+      "status": "unfinished",
+      "lastAttemptAt": "2026-11-12T06:22:01Z",
+      "error": null
+    },
+    "994544": {
+      "url": "https://camp-fire.jp/projects/994544/view",
+      "title": "ZUTTOMOTTO【真空せいら】生誕祭応援プロジェクト",
+      "description": "",
+      "status": "unfinished",
+      "lastAttemptAt": null,
+      "error": null
+    },
+    "995060": {
+      "url": "https://camp-fire.jp/projects/995060/view",
+      "title": "iON!【儚寧この】生誕祭応援プロジェクト",
+      "description": "",
+      "status": "unfinished",
+      "lastAttemptAt": null,
+      "error": null
+    },
+    "995069": {
+      "url": "https://camp-fire.jp/projects/995069/view",
+      "title": "なう♡すとれーじ【晴野せら】生誕祭応援プロジェクト",
+      "description": "",
+      "status": "unfinished",
+      "lastAttemptAt": null,
+      "error": null
+    },
+    "995179": {
+      "url": "https://camp-fire.jp/projects/995179/view",
+      "title": "ポンコツコンポ【夕葉里めろん】生誕祭応援プロジェクト",
+      "description": "",
+      "status": "unfinished",
+      "lastAttemptAt": null,
+      "error": null
+    },
+    "995719": {
+      "url": "https://camp-fire.jp/projects/995719/view",
+      "title": "ラストシーン【佑月いちか】生誕祭応援プロジェクト",
       "description": "",
       "status": "unfinished",
       "lastAttemptAt": null,
