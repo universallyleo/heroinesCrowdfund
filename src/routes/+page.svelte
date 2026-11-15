@@ -46,22 +46,12 @@
 		<button onclick={() => window.location.reload()}>ページを再読み込み</button>{:else}
 		<header>
 			<h1>{title}</h1>
-			<div class="agency-details">
-				<label class="agency-select"
-					>事務所<select bind:value={selectedId}
-						>{#each agencies as agency}<option value={agency.id}>{agency.label}</option
-							>{/each}</select
-					></label
-				>
-				<div class="agency-meta">
-					<div>
-						データソース：{#each selected.sources as source, i}{#if i > 0}・{/if}<a
-								href={source.url}>{source.label}</a
-							>{/each}
-					</div>
-					<div>データ最終更新：{formatUpdateDate(selected.metadata.updatedAt)}</div>
-				</div>
-			</div>
+			<label class="agency-select"
+				>事務所<select bind:value={selectedId}
+					>{#each agencies as agency}<option value={agency.id}>{agency.label}</option
+					>{/each}</select
+				></label
+			>
 		</header>
 		<div aria-live="polite" class="load-status">
 			{#if result.status === 'loading' || result.agencyId !== selectedId}<p>
@@ -85,13 +75,23 @@
 				/>{/key}
 		{/if}
 		<footer>
-			<div>サイト更新：{formatUpdateDate(__BUILD_DATE__)}</div>
+			<div class="footer-meta">
+				<div>
+					データソース：{#each selected.sources as source, i}{#if i > 0}・{/if}<a
+							href={source.url}>{source.label}</a
+						>{/each}
+				</div>
+				<div>データ最終更新：{formatUpdateDate(selected.metadata.updatedAt)}</div>
+				<div>サイト更新：{formatUpdateDate(__BUILD_DATE__)}</div>
+			</div>
 			<div class="footer-links">
 				<a href="https://github.com/universallyleo/heroinesCrowdfund"
 					><img width="32" src={ghlogo} alt="ソースコード" /></a
 				>
 				<a href="https://x.com/55gohan06"><img width="32" src={xicon} alt="X" /></a>
-				<a href="https://universallyleo.github.io/heroinesLeague/">ヒロインズリーグ記録</a>
+				{#if selectedId === 'heroines'}<a href="https://universallyleo.github.io/heroinesLeague/"
+						>ヒロインズリーグ記録</a
+					>{/if}
 			</div>
 		</footer>
 	{/if}
@@ -117,20 +117,18 @@
 		min-width: 0;
 	}
 	header {
-		padding: 1.2em;
+		padding: 0.65em 0.8em;
 		background: var(--panel);
-		border-top: 4px solid var(--border-strong);
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75em 1.5em;
 	}
 	h1 {
-		margin: 0 0 0.7em;
+		margin: 0;
 		font-size: clamp(1.3rem, 3vw, 1.8rem);
+		line-height: 1.2;
 		overflow-wrap: anywhere;
-	}
-	.agency-details {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: 1em 2em;
 	}
 	.agency-select {
 		display: flex;
@@ -138,6 +136,8 @@
 		gap: 0.6em;
 		font-weight: bold;
 		max-width: 100%;
+		flex: 0 1 auto;
+		white-space: nowrap;
 	}
 	select {
 		padding: 0.5em;
@@ -149,12 +149,6 @@
 		background: var(--bg);
 		color: var(--text);
 	}
-	.agency-meta {
-		color: var(--muted);
-		font-size: 0.9rem;
-		line-height: 1.8;
-		overflow-wrap: anywhere;
-	}
 	.load-status:empty {
 		display: none;
 	}
@@ -164,6 +158,14 @@
 		color: var(--muted);
 		text-align: center;
 		font-size: 0.9rem;
+	}
+	.footer-meta {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 0.25em 1.5em;
+		line-height: 1.6;
+		overflow-wrap: anywhere;
 	}
 	.footer-links {
 		display: flex;
@@ -178,13 +180,23 @@
 			padding: 8px;
 		}
 		header {
-			padding: 0.8em;
+			padding: 0.45em 0.6em;
+			flex-direction: column;
+			align-items: stretch;
+			gap: 0.35em;
+		}
+		h1 {
+			font-size: 1.1rem;
 		}
 		.agency-select {
-			width: 100%;
+			align-self: flex-end;
 		}
 		select {
-			flex: 1;
+			padding: 0.35em;
+		}
+		.footer-meta {
+			flex-direction: column;
+			align-items: center;
 		}
 	}
 </style>
