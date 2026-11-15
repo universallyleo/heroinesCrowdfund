@@ -188,6 +188,10 @@
 		background-color: var(--bg-emph2);
 		/* border-left: 1px solid var(--border-strong); */
 	}
+	.dt :global(thead th:nth-child(4)),
+	.dt :global(thead th:nth-child(5)) {
+		min-width: 8em;
+	}
 
 	.dt td {
 		padding: 0.4em;
