@@ -1,0 +1,21 @@
+{
+	"schemaVersion": 1,
+	"agencyId": "madsink",
+	"sources": {
+		"madsink": {
+			"listingUrl": "https://camp-fire.jp/profile/madsink/projects/post",
+			"checkpointUrl": "https://camp-fire.jp/projects/989296/view"
+		}
+	},
+	"pending": {
+		"991831": {
+			"url": "https://camp-fire.jp/projects/991831/view",
+			"title": "【紫魔法生誕祭2027】応援プロジェクト",
+			"description": "",
+			"status": "unfinished",
+			"lastAttemptAt": null,
+			"error": null,
+			"sourceIds": ["madsink"]
+		}
+	}
+}

@@ -1,141 +1,84 @@
 <script>
 	// @ts-nocheck
-
-	import { MoneyString, gpMap, mbSet, yrSelection } from '$lib/procData';
-
-	import { check } from '@vincjo/datatables';
+	import { MoneyString } from './procData.js';
+	import { createAgencyState, applyDraft, resetFilters } from './agencyState.js';
 	import GroupFilter from './GroupFilter.svelte';
-
-	let { table } = $props();
-
-	const collator = new Intl.Collator('ja', { sensitivity: 'base', usage: 'sort' });
-
-	const gps = [...gpMap.keys()].toSorted(collator.compare);
-	// $inspect('gps', gps);
-	let gpFilt = $state(gps);
-	let gpResetBtnClass = $state('reset-gp');
-	let mbFilt = $state('');
-	let yrFilt = $state('');
-	let minFundFilt = $state(100);
-	let maxFundFilt = $state(200000);
-	let members = $state([...mbSet]);
-
-	// const when = (cond, obj) => (cond ? obj : {});
-
-	let filters = {
-		group: table.createFilter('group', (g, lst) =>
-			lst.reduce((res, cur) => res || g.indexOf(cur) > -1, false)
-		),
-		member: table.createFilter('member', check.isEqualTo),
-		eventYear: table.createFilter('eventYear', check.isEqualTo),
-		minFund: table.createFilter('total', check.isGreaterThanOrEqualTo),
-		maxFund: table.createFilter('total', check.isLessThanOrEqualTo)
-	};
-
-	// $inspect('mbFilt', mbFilt);
-	let filtObj = $derived({
-		group: gpFilt.length < gps.length ? gpFilt : null,
-		member: mbFilt.length !== 0 ? mbFilt : null,
-		eventYear: yrFilt !== '' ? Number(yrFilt) : null,
-		minFund: minFundFilt * 1000,
-		maxFund: maxFundFilt * 1000
+	let { view, settings = $bindable() } = $props();
+	let error = $state('');
+	const collator = new Intl.Collator('ja');
+	let gps = $derived([...view.gpMap.keys()].sort(collator.compare));
+	let bounds = $derived(createAgencyState(view).draft);
+	let members = $derived(
+		[...new Set(settings.draft.groups.flatMap((gp) => [...(view.gpMap.get(gp)?.mbs ?? [])]))].sort(
+			collator.compare
+		)
+	);
+	$effect(() => {
+		if (settings.draft.member && !members.includes(settings.draft.member))
+			settings.draft.member = '';
 	});
-
-	function handleFilter() {
-		console.log(filtObj);
-		for (const key in filtObj) {
-			if (filtObj[key] === null) {
-				filters[key].clear();
-			} else {
-				filters[key].value = filtObj[key];
-				filters[key].set();
-			}
+	function apply() {
+		try {
+			applyDraft(settings);
+			error = '';
+		} catch (e) {
+			error = e.message;
 		}
 	}
-
-	function clear() {
-		gpFilt = [...gpMap.keys()];
-		mbFilt = '';
-		yrFilt = '';
-		minFundFilt = 400;
-		maxFundFilt = 20000;
-		members = [...mbSet];
-		handleFilter();
-	}
-
-	// Effect to repopulate member list when group filter changes
-	$effect(() => {
-		members =
-			gpFilt.length === gps.length
-				? [...mbSet]
-				: [...gpFilt.reduce((res, gp) => res.union(gpMap.get(gp).mbs), new Set())];
-		gpResetBtnClass = gpFilt.length === gps.length ? 'reset-gp' : 'reset-gp-inactive';
-	});
 </script>
 
 <aside>
-	<h3>絞り込む</h3>
-
+	<h2>絞り込む</h2>
 	<div class="filter-group group-filter-container">
-		<GroupFilter {gps} bind:selected={gpFilt} />
+		<GroupFilter {gps} gpMap={view.gpMap} bind:selected={settings.draft.groups} />
 	</div>
-
 	<div class="filter-group">
-		<label>
-			メンバー
-			<select bind:value={mbFilt}>
-				<option value=""> 全員 </option>
-				{#each members as mb (mb)}
-					<option value={mb}> {mb} </option>
-				{/each}
-			</select>
-		</label>
+		<label
+			>メンバー<select bind:value={settings.draft.member}
+				><option value="">全員</option>{#each members as mb}<option value={mb}>{mb}</option
+					>{/each}</select
+			></label
+		>
 	</div>
-
 	<div class="filter-group">
-		<label>
-			イベント実施年
-			<select bind:value={yrFilt}>
-				<option value="">全部</option>
-				{#each yrSelection as yr (yr)}
-					<option value={yr}> {yr} </option>
-				{/each}
-			</select>
-		</label>
+		<label
+			>イベント実施年<select bind:value={settings.draft.year}
+				><option value="">全部</option
+				>{#each [...view.yrSelection].sort((a, b) => b - a) as year}<option value={year}
+						>{year}</option
+					>{/each}</select
+			></label
+		>
 	</div>
-
 	<div class="filter-group">
-		<span> 支援額範囲 (~千円) : </span><br />
-		<label class="range-label">
-			<div class="label-text">
-				最小: {MoneyString(minFundFilt)}
-			</div>
-			<input
+		<span>支援額範囲（千円）</span>
+		<label class="range-label"
+			><span class="label-text">最小: {MoneyString(settings.draft.minFund)}</span><input
 				type="range"
-				id="minFund"
-				name="minFund"
-				bind:value={minFundFilt}
-				min="10"
-				max="18000"
-			/>
-		</label>
-		<label class="range-label">
-			<div class="label-text">
-				最大: {MoneyString(maxFundFilt)}
-			</div>
-			<input
+				bind:value={settings.draft.minFund}
+				min={bounds.minFund}
+				max={bounds.maxFund}
+				step="1"
+			/></label
+		>
+		<label class="range-label"
+			><span class="label-text">最大: {MoneyString(settings.draft.maxFund)}</span><input
 				type="range"
-				id="maxFund"
-				name="maxFund"
-				bind:value={maxFundFilt}
-				min="500"
-				max="20000"
-			/>
-		</label>
+				bind:value={settings.draft.maxFund}
+				min={bounds.minFund}
+				max={bounds.maxFund}
+				step="1"
+			/></label
+		>
 	</div>
+	{#if error}<p role="alert">{error}</p>{/if}
 	<div class="filter-btns">
-		<button onclick={() => handleFilter()}>条件を適用</button>
-		<button onclick={() => clear()}>リセット</button>
+		<button onclick={apply}>条件を適用</button><button
+			onclick={() => {
+				resetFilters(settings, view);
+				error = '';
+			}}>リセット</button
+		>
 	</div>
 </aside>
 
@@ -148,9 +91,10 @@
 		padding: 12px;
 	}
 
-	aside > h3 {
+	aside > h2 {
 		margin: 0 0 0.4em 0;
 		font-weight: normal;
+		font-size: 1.17em;
 		text-align: center;
 	}
 
@@ -166,28 +110,6 @@
 	.filter-group label:not(.range-label) {
 		display: block;
 		margin-bottom: 0.5em;
-	}
-
-	.label-inline {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-	}
-
-	.reset-gp {
-		font-size: 0.85rem;
-		padding: 0.18rem 0.45rem;
-		border: 1px solid var(--border);
-		border-radius: 0px;
-		background: transparent;
-		color: var(--text);
-		cursor: pointer;
-	}
-
-	.reset-gp-inactive {
-		border: 1px solid var(--border);
-		background: transparent;
-		color: var(--border);
 	}
 
 	.filter-group input,
@@ -236,10 +158,6 @@
 			width: auto;
 			min-width: 60%;
 			flex: 0 0 auto;
-		}
-
-		.group-filter-container > label {
-			display: block !important;
 		}
 
 		/* Make range-label a single row on small screens */

@@ -23,3 +23,9 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 notes.md
+# Python test/scraper caches
+__pycache__/
+*.py[cod]
+
+# Local implementation evidence
+.superpowers/

@@ -6,46 +6,89 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import shutil
+import re
+import tempfile
+from agency_config import (REGISTRY_PATH, fingerprint, resolve_agency, validate_records,
+                           validate_metadata, normalize_progress)
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
 
-def apply_staged_files(
-    report: dict[str, object],
-    output_dir: Path,
-    database_path: Path,
-    progress_path: Path,
-    backup_root: Path,
-    backup_stamp: str,
-    run_id: str,
-    attempt: str,
-) -> dict[str, str | None]:
-    database_changed = bool(report.get("databaseChanged"))
-    progress_changed = bool(report.get("progressChanged"))
-    backup_path: Path | None = None
-
-    if database_changed:
-        candidate_database = output_dir / "candidate_database.json"
-        if not candidate_database.exists():
-            raise RuntimeError(f"missing staged database: {candidate_database}")
-        if not database_path.exists():
-            raise RuntimeError(f"missing source database: {database_path}")
-        backup_root.mkdir(parents=True, exist_ok=True)
-        backup_path = backup_root / (
-            f"backup_at_{backup_stamp}_run{run_id}_attempt{attempt}.json"
-        )
-        shutil.copy2(database_path, backup_path)
-        shutil.copy2(candidate_database, database_path)
-
-    if progress_changed:
-        candidate_progress = output_dir / "candidate_progress.json"
-        if not candidate_progress.exists():
-            raise RuntimeError(f"missing staged progress: {candidate_progress}")
-        shutil.copy2(candidate_progress, progress_path)
-
-    return {"backup": str(backup_path) if backup_path else None}
+def apply_staged_files(report, output_dir, agency_id, repo_root, backup_stamp, run_id, attempt):
+    agency = resolve_agency(agency_id, repo_root)
+    if report.get("schemaVersion") != 1 or report.get("agencyId") != agency_id or report.get("outcome") not in ("success", "partial") or report.get("fatalError"):
+        raise ValueError("Stage is failed or belongs to another agency")
+    if report.get("scraperId") != agency["scraper"]["id"] or report.get("registrySha256") != fingerprint(repo_root / REGISTRY_PATH):
+        raise ValueError("Stage registry/scraper has changed")
+    if agency['scraper']['id'] == 'campfire_madsink':
+        from campfire_madsink import MEMBERS_PATH
+        if report.get('parserConfigSha256') != fingerprint(MEMBERS_PATH):
+            raise ValueError('Stage membership mapping has changed')
+    sources = agency['scraper']['discoverySources']
+    if set(report.get('sources', {})) != {s['id'] for s in sources} or any(
+        report['sources'][s['id']].get('listingUrl') != s['listingUrl'] for s in sources
+    ):
+        raise ValueError('Stage discovery source identity mismatch')
+    names = {"databasePath": "database", "metadataPath": "metadata", "progressPath": "progress"}
+    originals, candidates, changes = {}, {}, {}
+    for key, name in names.items():
+        path = repo_root / agency[key]
+        if report.get("sourceFiles", {}).get(key) != {"path": agency[key], "sha256": fingerprint(path)}:
+            raise ValueError(f"Stale or mismatched source: {key}")
+        originals[path] = path.read_bytes()
+        candidate = output_dir / f"candidate_{name}.json"
+        candidates[path] = candidate.read_bytes()
+        changed = json.loads(originals[path]) != json.loads(candidates[path])
+        if type(report.get(f"{name}Changed")) is not bool or report[f"{name}Changed"] != changed:
+            raise ValueError(f"Inconsistent {name}Changed flag")
+        changes[path] = changed
+    database_path = repo_root / agency['databasePath']
+    metadata_path = repo_root / agency['metadataPath']
+    progress_path = repo_root / agency['progressPath']
+    validate_records(json.loads(candidates[database_path]))
+    metadata = json.loads(candidates[metadata_path])
+    validate_metadata(metadata, agency)
+    progress = json.loads(candidates[progress_path])
+    if normalize_progress(progress, agency) != progress:
+        raise ValueError("Candidate progress is not normalized for the selected registry")
+    if report['databaseChanged'] and (metadata['updatedAt'] is None or metadata['updatedAt'] != report.get('generatedAt')):
+        raise ValueError("Changed records require matching content-update metadata")
+    for token in (backup_stamp, run_id, attempt):
+        if not re.fullmatch(r'[a-zA-Z0-9_-]+', token):
+            raise ValueError('Invalid backup identity')
+    backup_path = metadata_backup = None
+    created_backups, temporary_files, replaced = [], [], []
+    try:
+        if report['databaseChanged']:
+            backup_root = repo_root / agency['backupRoot']
+            backup_root.mkdir(parents=True, exist_ok=True)
+            stem = f'backup_at_{backup_stamp}_run{run_id}_attempt{attempt}'
+            backup_path = backup_root / (stem + '.json')
+            metadata_backup = backup_root / (stem + '.metadata.json')
+            for path, original in ((backup_path, originals[database_path]), (metadata_backup, originals[metadata_path])):
+                with path.open('xb') as file:
+                    created_backups.append(path)
+                    file.write(original)
+        for path, changed in changes.items():
+            if changed:
+                with tempfile.NamedTemporaryFile(dir=path.parent, prefix='.update-', delete=False) as file:
+                    temporary = Path(file.name); temporary_files.append(temporary)
+                    file.write(candidates[path])
+                os.replace(temporary, path)
+                replaced.append(path)
+    except Exception:
+        for path in reversed(replaced):
+            path.write_bytes(originals[path])
+        for path in created_backups:
+            path.unlink(missing_ok=True)
+        raise
+    finally:
+        for path in temporary_files:
+            path.unlink(missing_ok=True)
+    changed_paths = [str(path) for path, changed in changes.items() if changed] + [str(path) for path in created_backups]
+    return {'backup': str(backup_path) if backup_path else None,
+            'metadata_backup': str(metadata_backup) if metadata_backup else None, 'changed_paths': changed_paths}
 
 
 def _run_git(repo_root: Path, *arguments: str, check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -64,10 +107,19 @@ def commit_and_push(
     progress_path: Path,
     backup_path: str | None,
     commit_message: str,
+    extra_paths: list[str] | None = None,
 ) -> str | None:
-    paths = [str(database_path), str(progress_path)]
+    paths = [str(database_path), str(progress_path), *(extra_paths or [])]
     if backup_path:
         paths.append(backup_path)
+    if _run_git(repo_root, "branch", "--show-current").stdout.strip() != "main":
+        raise ValueError("Publication requires the main branch")
+    if _run_git(repo_root, "diff", "--cached", "--name-only").stdout.strip():
+        raise ValueError("Publication checkout already has staged changes")
+    allowed = {str((repo_root / path).resolve()) for path in paths}
+    dirty = _run_git(repo_root, "status", "--porcelain", "--untracked-files=all", "-z").stdout.split('\0')
+    if any(str((repo_root / entry[3:]).resolve()) not in allowed for entry in dirty if entry):
+        raise ValueError("Publication checkout has unrelated changes")
     _run_git(repo_root, "add", "--", *paths)
 
     staged_diff = _run_git(repo_root, "diff", "--cached", "--quiet", check=False)
@@ -91,51 +143,32 @@ def _write_github_output(path: Path | None, values: dict[str, str | None]) -> No
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, required=True)
-    parser.add_argument("--database", type=Path, default=Path("src/lib/data/heroinesCF.json"))
-    parser.add_argument("--progress", type=Path, default=Path("scrape_data/scrape_progress.json"))
-    parser.add_argument("--backup-root", type=Path, default=Path("src/lib/data/old"))
+    parser.add_argument("--agency", default="heroines")
     parser.add_argument("--repo-root", type=Path, default=Path("."))
+    parser.add_argument("--publish", action="store_true", help="Commit/push to main from a clean production checkout")
     parser.add_argument("--github-output", type=Path)
     parser.add_argument("--run-id", default=os.environ.get("GITHUB_RUN_ID", "local"))
     parser.add_argument("--attempt", default=os.environ.get("GITHUB_RUN_ATTEMPT", "local"))
-    parser.add_argument(
-        "--backup-stamp",
-        default=datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ"),
-    )
+    parser.add_argument("--backup-stamp", default=datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ"))
     args = parser.parse_args()
-
+    args.repo_root = args.repo_root.resolve()
+    if args.publish:
+        if _run_git(args.repo_root, "branch", "--show-current").stdout.strip() != "main" or _run_git(args.repo_root, "status", "--porcelain").stdout.strip():
+            raise ValueError("Publishing requires a clean main checkout before application")
     report = json.loads((args.output_dir / "run_report.json").read_text(encoding="utf-8"))
-    result = apply_staged_files(
-        report,
-        args.output_dir,
-        args.database,
-        args.progress,
-        args.backup_root,
-        args.backup_stamp,
-        args.run_id,
-        args.attempt,
-    )
-
+    result = apply_staged_files(report, args.output_dir, args.agency, args.repo_root,
+                               args.backup_stamp, args.run_id, args.attempt)
     commit_sha = None
-    if report.get("databaseChanged") or report.get("progressChanged"):
-        commit_message = (
-            "data: update scraped crowdfunding records"
-            if report.get("databaseChanged")
-            else "data: update scraper progress"
-        )
-        commit_sha = commit_and_push(
-            args.repo_root,
-            args.database,
-            args.progress,
-            result["backup"],
-            commit_message,
-        )
-
-    outputs = {
-        "database_changed": "true" if report.get("databaseChanged") else "false",
-        "progress_changed": "true" if report.get("progressChanged") else "false",
-        "commit_sha": commit_sha,
-    }
+    if args.publish and result['changed_paths']:
+        agency = resolve_agency(args.agency, args.repo_root)
+        commit_sha = commit_and_push(args.repo_root, Path(agency['databasePath']), Path(agency['progressPath']),
+                                    result['backup'], f"data: update {args.agency} crowdfunding snapshot/progress",
+                                    extra_paths=result['changed_paths'])
+    outputs = {"database_changed": str(report['databaseChanged']).lower(),
+               "metadata_changed": str(report['metadataChanged']).lower(),
+               "progress_changed": str(report['progressChanged']).lower(),
+               "public_data_changed": str(report['databaseChanged'] or report['metadataChanged']).lower(),
+               "commit_sha": commit_sha}
     _write_github_output(args.github_output, outputs)
     print(json.dumps({**result, **outputs}, ensure_ascii=False, indent=2))
     return 0

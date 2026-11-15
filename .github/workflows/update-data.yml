@@ -3,6 +3,14 @@ name: Update scraped crowdfunding data
 on:
   workflow_dispatch:
     inputs:
+      agency:
+        description: '更新する事務所'
+        required: true
+        type: choice
+        default: heroines
+        options:
+          - heroines
+          - madsink
       dry_run:
         description: 'Scrape and upload a report without changing the repository'
         required: false
@@ -29,7 +37,12 @@ jobs:
     outputs:
       database_changed: ${{ steps.apply.outputs.database_changed || 'false' }}
       progress_changed: ${{ steps.apply.outputs.progress_changed || 'false' }}
+      metadata_changed: ${{ steps.apply.outputs.metadata_changed || 'false' }}
+      public_data_changed: ${{ steps.apply.outputs.public_data_changed || 'false' }}
       commit_sha: ${{ steps.apply.outputs.commit_sha }}
+    env:
+      AGENCY: ${{ inputs.agency }}
+      OUTPUT_DIR: ${{ runner.temp }}/scrape-${{ inputs.agency }}-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - name: Checkout main
         uses: actions/checkout@v6
@@ -48,8 +61,6 @@ jobs:
         run: python -m unittest discover -s scrape_data -p 'test_*.py' -v
 
       - name: Scrape and stage candidates
-        env:
-          OUTPUT_DIR: ${{ runner.temp }}/heroines-scrape-output
         run: |
           mkdir -p "$OUTPUT_DIR"
           scan_args=()
@@ -57,35 +68,35 @@ jobs:
             scan_args+=(--full-scan)
           fi
           python scrape_data/scraper.py \
-            --database src/lib/data/heroinesCF.json \
-            --progress scrape_data/scrape_progress.json \
+            --agency "$AGENCY" \
             --output-dir "$OUTPUT_DIR" \
             "${scan_args[@]}"
+
+      - name: Summarize scrape coverage
+        if: always()
+        run: python scrape_data/summarize_report.py "$OUTPUT_DIR"
 
       - name: Upload scrape report
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: scrape-report-${{ github.run_id }}
-          path: ${{ runner.temp }}/heroines-scrape-output
+          name: scrape-report-${{ inputs.agency }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.OUTPUT_DIR }}
           if-no-files-found: ignore
 
       - name: Apply staged data and push
         id: apply
         if: ${{ success() && !inputs.dry_run }}
-        env:
-          OUTPUT_DIR: ${{ runner.temp }}/heroines-scrape-output
         run: |
           python scrape_data/apply_update.py \
             --output-dir "$OUTPUT_DIR" \
-            --database src/lib/data/heroinesCF.json \
-            --progress scrape_data/scrape_progress.json \
-            --backup-root src/lib/data/old \
-            --repo-root . \
+            --agency "$AGENCY" \
+            --repo-root . --publish \
             --github-output "$GITHUB_OUTPUT"
+          echo "Completed application for $AGENCY at $(git rev-parse HEAD). A no-op creates no commit; public changes trigger the rebuild job." >> "$GITHUB_STEP_SUMMARY"
 
   rebuild:
-    if: ${{ needs.scrape.outputs.database_changed == 'true' }}
+    if: ${{ needs.scrape.outputs.public_data_changed == 'true' && needs.scrape.outputs.commit_sha != '' }}
     needs: scrape
     uses: ./.github/workflows/build.yml
     with:

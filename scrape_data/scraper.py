@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Discover and scrape finished CAMPFIRE projects for the heroines profile."""
+"""Discover and stage finished CAMPFIRE projects for one registered agency."""
 
 from __future__ import annotations
 
@@ -18,6 +18,8 @@ from urllib.parse import urljoin
 
 import requests
 from bs4 import BeautifulSoup
+from agency_config import (PATH_KEYS, REGISTRY_PATH, fingerprint, read_json, resolve_agency,
+                           normalize_progress, validate_metadata, validate_records)
 
 
 LISTING_URL = "https://camp-fire.jp/profile/heroines/projects/post"
@@ -249,11 +251,11 @@ def parse_listing_page(html: str, page_url: str) -> tuple[list[ProjectSummary], 
 
 def discover_listing(
     fetch_text: Callable[[str], str],
-    checkpoint_url: str,
+    checkpoint_url: str | None,
     listing_url: str = LISTING_URL,
     full_scan: bool = False,
 ) -> DiscoveryResult:
-    checkpoint_id = project_id_from_url(checkpoint_url)
+    checkpoint_id = project_id_from_url(checkpoint_url) if checkpoint_url else None
     current_url = listing_url
     visited_urls: set[str] = set()
     summaries: list[ProjectSummary] = []
@@ -287,6 +289,7 @@ def parse_project_page(
     html: str,
     url: str,
     listing_description: str = "",
+    details_parser=None,
 ) -> dict[str, object]:
     soup = BeautifulSoup(html, "html.parser")
     title = _first_text(soup, ["div.project-hero span.title-name", ".project-hero .title-name"])
@@ -337,7 +340,8 @@ def parse_project_page(
 
     meta_description = _first_attribute(soup, 'meta[name="description"]', "content")
     year_source = meta_description or listing_description
-    event_year = parse_event_year(year_source)
+    subject, event_year = (details_parser(title, soup, year_source) if details_parser
+                           else (parse_subject(title), parse_event_year(year_source)))
 
     return {
         "url": canonical_project_url(url),
@@ -349,7 +353,7 @@ def parse_project_page(
             {"price": price, "patrons": reward_totals[price]}
             for price in sorted(reward_totals)
         ],
-        "subject": parse_subject(title),
+        "subject": subject,
         "start": start,
         "end": end,
         "eventYear": event_year,
@@ -365,21 +369,6 @@ def merge_records(existing: list[dict[str, object]], new_records: list[dict[str,
             unique_new[project_id] = record
     ordered_new = [unique_new[project_id] for project_id in sorted(unique_new, key=int, reverse=True)]
     return ordered_new + existing
-
-
-def load_progress(path: Path) -> dict[str, object]:
-    if not path.exists():
-        return {"checkpointUrl": DEFAULT_CHECKPOINT_URL, "pending": {}}
-
-    try:
-        value = json.loads(path.read_text(encoding="utf-8"))
-        checkpoint = canonical_project_url(str(value["checkpointUrl"]))
-        pending = value.get("pending", {})
-        if not isinstance(pending, dict):
-            raise ValueError("pending must be an object")
-        return {"checkpointUrl": checkpoint, "pending": pending}
-    except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
-        raise ScrapeError(f"invalid progress file: {path}: {exc}") from exc
 
 
 def _pending_entry(summary: ProjectSummary, status: str, attempted_at: str | None = None, error: str | None = None) -> dict[str, object]:
@@ -399,8 +388,8 @@ def _write_json(path: Path, value: object) -> None:
 
 
 def run_pipeline(
-    database_path: Path,
-    progress_path: Path,
+    agency_id: str,
+    repo_root: Path,
     output_dir: Path,
     full_scan: bool = False,
     fetch_text: Callable[[str], str] | None = None,
@@ -408,121 +397,130 @@ def run_pipeline(
 ) -> dict[str, object]:
     generated_at = generated_at or utc_now()
     output_dir.mkdir(parents=True, exist_ok=True)
-    existing = json.loads(database_path.read_text(encoding="utf-8"))
-    progress = load_progress(progress_path)
-    pending = copy.deepcopy(progress["pending"])
-    fetch_text = fetch_text or HttpFetcher()
-
+    report = {"schemaVersion": 1, "agencyId": agency_id, "generatedAt": generated_at,
+              "databaseChanged": False, "metadataChanged": False, "progressChanged": False,
+              "fullScan": full_scan, "sources": {}, "failures": [], "warnings": []}
     try:
-        discovery = discover_listing(
-            fetch_text,
-            str(progress["checkpointUrl"]),
-            full_scan=full_scan,
-        )
+        agency = resolve_agency(agency_id, repo_root)
+        paths = {key: repo_root / agency[key] for key in PATH_KEYS}
+        report["sourceFiles"] = {key: {"path": agency[key], "sha256": fingerprint(path)} for key, path in paths.items()}
+        report["registrySha256"] = fingerprint(repo_root / REGISTRY_PATH)
+        report["scraperId"] = agency["scraper"]["id"]
+        existing = read_json(paths["databasePath"])
+        metadata = read_json(paths["metadataPath"])
+        original_progress = read_json(paths["progressPath"])
+        validate_records(existing)
+        validate_metadata(metadata, agency)
+        progress = normalize_progress(original_progress, agency)
+        pending = copy.deepcopy(progress["pending"])
+        prior_pending_ids = set(pending)
+        existing_ids = {project_id_from_url(record["url"]) for record in existing}
+        for id in existing_ids:
+            pending.pop(id, None)
+        fetch_text = fetch_text or HttpFetcher()
+        details_parser = None
+        if agency["scraper"]["id"] == "campfire_madsink":
+            from campfire_madsink import MEMBERS_PATH, parse_details
+            details_parser = parse_details
+            report['parserConfigSha256'] = fingerprint(MEMBERS_PATH)
+        successes = 0
+        discoveries = {}
+        summaries = {}
+        origins = {}
+        descriptions = {}
+        for source in agency["scraper"]["discoverySources"]:
+            sid = source["id"]
+            checkpoint = progress["sources"][sid]["checkpointUrl"]
+            try:
+                discovery = discover_listing(fetch_text, checkpoint, source["listingUrl"], full_scan)
+                successes += 1
+                discoveries[sid] = discovery
+                report["sources"][sid] = {"listingUrl": source["listingUrl"], "outcome": "success",
+                    "pagesScanned": discovery.pages_scanned, "checkpointFound": discovery.checkpoint_found}
+                if checkpoint and not discovery.checkpoint_found:
+                    report["warnings"].append(f"{sid}: checkpoint absent; traversed complete listing")
+                for summary in discovery.summaries:
+                    id = summary.project_id
+                    origins.setdefault(id, set()).add(sid)
+                    descriptions.setdefault(id, set()).add(summary.description)
+                    if id not in summaries or "終了" in summary.status:
+                        summaries[id] = summary
+            except Exception as exc:
+                report["sources"][sid] = {"listingUrl": source["listingUrl"], "outcome": "failed", "error": str(exc)}
+        candidates = {}
+        for id, summary in summaries.items():
+            if id in existing_ids:
+                continue
+            source_ids = sorted(origins[id] | set(pending.get(id, {}).get("sourceIds", [])))
+            description = "\n".join(sorted(d for d in descriptions[id] if d))
+            summary = ProjectSummary(id, summary.url, summary.title, description, summary.status)
+            if "終了" in summary.status or id in prior_pending_ids:
+                candidates[id] = summary
+            if id not in pending:
+                pending[id] = _pending_entry(summary, "unfinished")
+            pending[id]["sourceIds"] = source_ids
+        for id in prior_pending_ids - existing_ids:
+            entry = pending[id]
+            candidates.setdefault(id, ProjectSummary(id, entry["url"], entry.get("title", ""), entry.get("description", ""), entry["status"]))
+        new_records = []
+        for id in sorted(candidates, key=int, reverse=True):
+            summary = candidates[id]
+            source_ids = pending[id]["sourceIds"]
+            attempted_at = utc_now()
+            try:
+                record = parse_project_page(fetch_text(summary.url), summary.url, summary.description, details_parser=details_parser)
+                validate_records([record])
+                new_records.append(record)
+                pending.pop(id, None)
+                successes += 1
+            except ProjectNotFinished:
+                pending[id] = {**_pending_entry(summary, "unfinished", attempted_at), "sourceIds": source_ids}
+                successes += 1
+            except Exception as exc:
+                pending[id] = {**_pending_entry(summary, "failed", attempted_at, str(exc)), "sourceIds": source_ids}
+                report["failures"].append({"projectId": id, "url": summary.url, "error": str(exc)})
+        if not successes:
+            raise ScrapeError("Every discovery and pending-project operation failed; nothing may be applied")
+        merged = merge_records(existing, new_records)
+        if agency['scraper']['id'] == 'campfire_madsink':
+            from campfire_madsink import refresh_groups
+            merged = refresh_groups(merged)
+        validate_records(merged)
+        resulting_ids = {project_id_from_url(record["url"]) for record in merged}
+        for sid, discovery in discoveries.items():
+            for summary in discovery.summaries:
+                if summary.project_id in resulting_ids:
+                    progress["sources"][sid]["checkpointUrl"] = summary.url
+                    break
+        progress["pending"] = {id: pending[id] for id in sorted(pending, key=int)}
+        normalize_progress(progress, agency)
+        report["databaseChanged"] = merged != existing
+        candidate_metadata = {**metadata, "updatedAt": generated_at} if report["databaseChanged"] else metadata
+        validate_metadata(candidate_metadata, agency)
+        report["metadataChanged"] = candidate_metadata != metadata
+        report["progressChanged"] = progress != original_progress
+        report["newProjectIds"] = [project_id_from_url(record["url"]) for record in new_records]
+        report["unfinishedProjectIds"] = [id for id, entry in pending.items() if entry["status"] == "unfinished"]
+        report["failedProjectIds"] = [id for id, entry in pending.items() if entry["status"] == "failed"]
+        report["outcome"] = "partial" if report["failures"] or any(s["outcome"] == "failed" for s in report["sources"].values()) else "success"
+        _write_json(output_dir / "candidate_database.json", merged)
+        _write_json(output_dir / "candidate_metadata.json", candidate_metadata)
+        _write_json(output_dir / "candidate_progress.json", progress)
     except Exception as exc:
-        report = {
-            "generatedAt": generated_at,
-            "fatalError": str(exc),
-            "databaseChanged": False,
-            "progressChanged": False,
-        }
-        _write_json(output_dir / "run_report.json", report)
-        return report
-
-    existing_ids = {project_id_from_url(str(record["url"])) for record in existing}
-    candidates: dict[str, ProjectSummary] = {}
-    prior_pending_ids = set(pending)
-    for summary in discovery.summaries:
-        if summary.project_id in existing_ids:
-            pending.pop(summary.project_id, None)
-        elif "終了" in summary.status:
-            candidates[summary.project_id] = summary
-        elif summary.project_id not in pending:
-            pending[summary.project_id] = _pending_entry(summary, "unfinished")
-
-    for project_id in prior_pending_ids:
-        entry = pending[project_id]
-        if project_id in existing_ids or project_id in candidates:
-            continue
-        try:
-            candidates[project_id] = ProjectSummary(
-                project_id=project_id,
-                url=canonical_project_url(str(entry["url"])),
-                title=str(entry.get("title", "")),
-                description=str(entry.get("description", "")),
-                status=str(entry.get("status", "unfinished")),
-            )
-        except (KeyError, TypeError, ParseError) as exc:
-            entry["status"] = "failed"
-            entry["error"] = str(exc)
-
-    new_records: list[dict[str, object]] = []
-    failures: list[dict[str, str]] = []
-    for project_id in sorted(candidates, key=int, reverse=True):
-        summary = candidates[project_id]
-        attempted_at = utc_now()
-        try:
-            record = parse_project_page(
-                fetch_text(summary.url), summary.url, listing_description=summary.description
-            )
-            new_records.append(record)
-            pending.pop(project_id, None)
-        except ProjectNotFinished:
-            pending[project_id] = _pending_entry(summary, "unfinished", attempted_at)
-        except Exception as exc:
-            error = str(exc)
-            pending[project_id] = _pending_entry(summary, "failed", attempted_at, error)
-            failures.append({"projectId": project_id, "url": summary.url, "error": error})
-
-    merged = merge_records(existing, new_records)
-    resulting_ids = existing_ids | {project_id_from_url(str(record["url"])) for record in new_records}
-    new_checkpoint = str(progress["checkpointUrl"])
-    for summary in discovery.summaries:
-        if summary.project_id in resulting_ids:
-            new_checkpoint = summary.url
-            break
-
-    candidate_progress = {
-        "checkpointUrl": new_checkpoint,
-        "pending": {key: pending[key] for key in sorted(pending, key=lambda value: int(value))},
-    }
-    progress_changed = candidate_progress != progress
-    report = {
-        "generatedAt": generated_at,
-        "pagesScanned": discovery.pages_scanned,
-        "checkpointFound": discovery.checkpoint_found,
-        "checkpointUrl": new_checkpoint,
-        "newProjectIds": [project_id_from_url(str(record["url"])) for record in new_records],
-        "unfinishedProjectIds": sorted(
-            key for key, value in pending.items() if value.get("status") == "unfinished"
-        ),
-        "failedProjectIds": sorted(
-            key for key, value in pending.items() if value.get("status") == "failed"
-        ),
-        "failures": failures,
-        "databaseChanged": bool(new_records),
-        "progressChanged": progress_changed,
-        "fullScan": full_scan,
-    }
-    _write_json(output_dir / "candidate_database.json", merged)
-    _write_json(output_dir / "candidate_progress.json", candidate_progress)
+        report.update(outcome="failed", fatalError=str(exc), databaseChanged=False, metadataChanged=False, progressChanged=False)
     _write_json(output_dir / "run_report.json", report)
     return report
 
 
-def build_argument_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--database", type=Path, default=DEFAULT_DATABASE_PATH)
-    parser.add_argument("--progress", type=Path, default=DEFAULT_PROGRESS_PATH)
-    parser.add_argument("--output-dir", type=Path, default=None)
-    parser.add_argument("--full-scan", action="store_true")
-    return parser
-
-
 def main(argv: list[str] | None = None) -> int:
-    args = build_argument_parser().parse_args(argv)
-    output_dir = args.output_dir or Path(tempfile.mkdtemp(prefix="heroines-scrape-"))
-    report = run_pipeline(args.database, args.progress, output_dir, full_scan=args.full_scan)
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--agency", default="heroines")
+    parser.add_argument("--repo-root", type=Path, default=Path("."))
+    parser.add_argument("--output-dir", type=Path)
+    parser.add_argument("--full-scan", action="store_true")
+    args = parser.parse_args(argv)
+    output_dir = args.output_dir or Path(tempfile.mkdtemp(prefix=f"{args.agency}-scrape-"))
+    report = run_pipeline(args.agency, args.repo_root, output_dir, full_scan=args.full_scan)
     print(json.dumps(report, ensure_ascii=False, indent=2))
     return 1 if report.get("fatalError") else 0
 

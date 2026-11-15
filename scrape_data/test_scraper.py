@@ -4,6 +4,7 @@ import tempfile
 from pathlib import Path
 
 import requests
+from test_agency_config import setup_repo, write
 
 from scraper import (
     HttpFetcher,
@@ -253,11 +254,12 @@ class ScraperParsingTests(unittest.TestCase):
         )
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
-            database = root / "database.json"
-            progress = root / "progress.json"
+            agency = setup_repo(root, ("heroines",))["agencies"][0]
+            database = root / agency["databasePath"]
+            progress = root / agency["progressPath"]
             output = root / "output"
             database.write_text(
-                json.dumps([{"url": "https://camp-fire.jp/projects/100/view", "title": "existing"}]),
+                json.dumps([parse_project_page(PROJECT_PAGE, "https://camp-fire.jp/projects/100/view")]),
                 encoding="utf-8",
             )
             progress.write_text(
@@ -275,7 +277,7 @@ class ScraperParsingTests(unittest.TestCase):
                 "https://camp-fire.jp/projects/198/view": "<html></html>",
             }
 
-            report = run_pipeline(database, progress, output, fetch_text=pages.__getitem__)
+            report = run_pipeline("heroines", root, output, fetch_text=pages.__getitem__)
 
             self.assertEqual(report["newProjectIds"], ["199"])
             self.assertEqual(report["unfinishedProjectIds"], ["200"])
@@ -288,13 +290,14 @@ class ScraperParsingTests(unittest.TestCase):
     def test_run_pipeline_retries_pending_project_even_when_listing_does_not_reach_it(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
-            database = root / "database.json"
-            progress = root / "progress.json"
+            agency = setup_repo(root, ("heroines",))["agencies"][0]
+            database = root / agency["databasePath"]
+            progress = root / agency["progressPath"]
             output = root / "output"
             database.write_text(
                 json.dumps(
                     [
-                        {"url": "https://camp-fire.jp/projects/199/view", "title": "checkpoint"},
+                        parse_project_page(PROJECT_PAGE, "https://camp-fire.jp/projects/199/view"),
                     ]
                 ),
                 encoding="utf-8",
@@ -320,7 +323,7 @@ class ScraperParsingTests(unittest.TestCase):
                 "https://camp-fire.jp/projects/198/view": PROJECT_PAGE,
             }
 
-            report = run_pipeline(database, progress, output, fetch_text=pages.__getitem__)
+            report = run_pipeline("heroines", root, output, fetch_text=pages.__getitem__)
 
             self.assertEqual(report["newProjectIds"], ["198"])
             self.assertEqual(report["failedProjectIds"], [])

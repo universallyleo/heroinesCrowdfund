@@ -1,0 +1,60 @@
+{
+	"schemaVersion": 1,
+	"defaultAgencyId": "heroines",
+	"agencies": [
+		{
+			"id": "heroines",
+			"label": "heroines/imaginate",
+			"sources": [
+				{
+					"label": "CAMPFIRE（heroines）",
+					"url": "https://camp-fire.jp/profile/heroines"
+				},
+				{
+					"label": "CAMPFIRE（imaginate）",
+					"url": "https://camp-fire.jp/profile/imaginate"
+				}
+			],
+			"databasePath": "src/lib/data/heroinesCF.json",
+			"metadataPath": "src/lib/data/agencies/heroines/metadata.json",
+			"progressPath": "scrape_data/scrape_progress.json",
+			"backupRoot": "src/lib/data/old/heroines",
+			"scraper": {
+				"id": "campfire",
+				"discoverySources": [
+					{
+						"id": "heroines",
+						"listingUrl": "https://camp-fire.jp/profile/heroines/projects/post"
+					}
+				]
+			}
+		},
+		{
+			"id": "madsink",
+			"label": "MAD’S iNK",
+			"sources": [
+				{
+					"label": "CAMPFIRE（MAD’S iNK）",
+					"url": "https://camp-fire.jp/profile/madsink"
+				},
+				{
+					"label": "Jpop Wiki（所属情報）",
+					"url": "https://jpop.fandom.com/wiki/MAD%27S_iNK"
+				}
+			],
+			"databasePath": "src/lib/data/agencies/madsink/projects.json",
+			"metadataPath": "src/lib/data/agencies/madsink/metadata.json",
+			"progressPath": "scrape_data/progress/madsink.json",
+			"backupRoot": "src/lib/data/old/madsink",
+			"scraper": {
+				"id": "campfire_madsink",
+				"discoverySources": [
+					{
+						"id": "madsink",
+						"listingUrl": "https://camp-fire.jp/profile/madsink/projects/post"
+					}
+				]
+			}
+		}
+	]
+}

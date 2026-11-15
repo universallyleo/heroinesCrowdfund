@@ -1,28 +1,24 @@
 <script>
-	let { table, field, children, zindex = 7, frozen = false } = $props();
-
-	const sort = table.createSort(field);
+	let { sort, onSort, children, zindex = 7, frozen = false } = $props();
 </script>
 
 <th
-	data-field={field}
 	class={{ active: sort.isActive, frozen }}
 	style="z-index: {zindex}"
-	onclick={() => sort.set()}
 	aria-sort={sort.direction === 'asc'
 		? 'ascending'
 		: sort.direction === 'desc'
 			? 'descending'
 			: 'none'}
 >
-	<div class="flex">
+	<button class="flex" onclick={() => onSort(sort)}>
 		<strong>{@render children()}</strong>
 		<span
 			class="sort-indicator"
 			class:asc={sort.direction === 'asc'}
 			class:desc={sort.direction === 'desc'}
 		></span>
-	</div>
+	</button>
 </th>
 
 <style>
@@ -40,7 +36,13 @@
 		white-space: pre-wrap;
 		text-align: left;
 	}
-	div.flex {
+	button.flex {
+		background: transparent;
+		color: inherit;
+		border: 0;
+		font: inherit;
+		cursor: pointer;
+		width: 100%;
 		padding: 0;
 		display: flex;
 		align-items: center;

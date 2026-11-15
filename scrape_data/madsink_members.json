@@ -1,0 +1,41 @@
+{
+	"reviewedAt": "2026-11-15",
+	"policy": "Latest known main group first, then collaboration groups. Apply this mapping to all event years. Retired members retain their last known main group. Slash format matches heroines subject.group.",
+	"confirmation": "User confirmed latest-group policy, all five MADS PRINCE aliases, and MADMED for Natsuki Jam, Onaka Peco, Amagami Ayame, Kakushi Tenlu on 2026-11-15.",
+	"references": [
+		"https://jpop.fandom.com/wiki/MAD%27S_iNK",
+		"https://jpop.fandom.com/wiki/Kamisama_no_Iu_Tori",
+		"https://jpop.fandom.com/wiki/Me%21",
+		"https://jpop.fandom.com/wiki/Mazari",
+		"https://jpop.fandom.com/wiki/MADOROMI",
+		"https://jpop.fandom.com/wiki/Zetsubou_Kinema",
+		"https://jpop.fandom.com/wiki/MADMED",
+		"https://jpop.fandom.com/wiki/Chicha_Med",
+		"https://jpop.fandom.com/wiki/MADS_PRINCE"
+	],
+	"members": {
+		"紫魔法": ["めっ！"],
+		"叶萌哀華": ["神様の言う通り"],
+		"響奇☆りつ": ["めっ！"],
+		"暗空夜": ["神様の言う通り", "まっずぷりんす"],
+		"堕嬢。": ["MADOROMI"],
+		"猿馬虎": ["MADOROMI", "まっずぷりんす"],
+		"朽壊レム": ["マザリ", "まっずぷりんす"],
+		"月神キラ": ["MADOROMI"],
+		"屑飼つみき": ["神様の言う通り"],
+		"米粉パン": ["マザリ"],
+		"深ゐ沼": ["MADOROMI"],
+		"悼ミ弔": ["絶望キネマ", "まっずぷりんす"],
+		"ありすりあ": ["めっ！", "ちちゃめど"],
+		"今世イ憂³": ["絶望キネマ"],
+		"那月邪夢": ["MADMED"],
+		"死ヰメロアンチ": ["マザリ"],
+		"Q酸素": ["神様の言う通り", "ちちゃめど"],
+		"蛇喰ホムラ": ["マザリ"],
+		"真鬼マナセ": ["マザリ", "まっずぷりんす"],
+		"髄狂アク": ["マザリ"],
+		"おなかぺこ": ["MADMED"],
+		"天噛ミ妖メ": ["MADMED"],
+		"架空使てんる": ["MADMED"]
+	}
+}

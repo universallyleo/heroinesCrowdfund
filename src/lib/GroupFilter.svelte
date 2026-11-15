@@ -1,6 +1,5 @@
 <script>
-	import { gpMap } from '$lib/procData';
-	let { gps, selected = $bindable() } = $props();
+	let { gps, gpMap, selected = $bindable() } = $props();
 
 	function toggle(val) {
 		if (selected.includes(val)) {

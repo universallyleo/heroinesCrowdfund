@@ -25,11 +25,10 @@ export function dayInYear(mmdd, year) {
  * @returns {number} number of day of 'YYYY(+1)-dd-mm' from 'YYYY-DD-MM'
  */
 export function dayFrom(date, from = now) {
-	let year = parseInt(from.slice(0, 4));
-	let dayAtFrom = dayInYear(from.slice(5), year);
-	let noyearDate = date.length > 5 ? date.slice(5) : date;
-	let diff = dayInYear(noyearDate, year) - dayAtFrom;
-	return diff >= 0 ? diff : dayInYear(noyearDate, year + 1) + (365 + (year % 0 != 0) - dayAtFrom);
+	const origin = Date.parse(`${from}T00:00:00Z`);
+	let target = date.length > 5 ? date : `${from.slice(0, 4)}-${date}`;
+	if (date.length === 5 && target < from) target = `${Number(from.slice(0, 4)) + 1}-${date}`;
+	return (Date.parse(`${target}T00:00:00Z`) - origin) / 86_400_000;
 }
 
 // ******************************
@@ -121,8 +120,6 @@ const testdata = [
 	}
 ];
 
-import data from '$lib/data/heroinesCF.json';
-
 /**
  * @param  {Object<string, any>} o
  * @param  {string[]} ks  array of keys
@@ -130,18 +127,11 @@ import data from '$lib/data/heroinesCF.json';
  */
 const pick = (o, ks) => Object.fromEntries(ks.map((k) => [k, o[k]]));
 
-const LEN = data.length;
-console.log(`**** LEN(data) = ${LEN} ****`);
-
 // nested flattening of JSON.  keys become "a.b.c" for original obj { a: {b: {c: ...}}}
 // const flattenObj = (o, p = '', r = {}) =>
 // 	Object.entries(o).forEach(([k, v]) =>
 // 		v && typeof v === 'object' && !Array.isArray(v) ? flattenObj(v, p + k + '.', r) : (r[p + k] = v)
 // 	) || r;
-
-export const gpMap = new Map();
-export const mbSet = new Set();
-export const yrSelection = new Set();
 
 /**
  * @typedef {ProcessedData}
@@ -161,53 +151,59 @@ export const yrSelection = new Set();
  * @property {Object} pricePatrons
  */
 
-export const processedData = data.reduce((arr, o, i) => {
-	if (o.per !== '終了') return arr;
-	const r = Object.assign(
-		pick(o, ['total', 'url', 'start', 'end', 'pricePatrons', 'eventYear']),
-		o.subject
-	);
-	r.totalpatrons = o.rest;
-	// r.averageFund = MoneyString((o.total / o.rest).toFixed(0));
-	r.averageFund = o.total / o.rest;
-	r.id = i;
-	r.period = dayFrom(o.end, o.start);
-	// r.eventYear = Number(o.sub.slice(0, 4));
-	// if (isNaN(r.eventYear)) {
-	// 	console.log('NaN: ', o.sub);
-	// }
-	r.ppTotal = o.pricePatrons.reduce((res, x) => ((res += x.price * x.patrons), res), 0);
-	arr.push(r);
+export function processAgencyData(data) {
+	const gpMap = new Map();
+	const mbSet = new Set();
+	const yrSelection = new Set();
+	const processedData = data.reduce((arr, o, i) => {
+		if (o.per !== '終了') return arr;
+		const r = Object.assign(
+			pick(o, ['total', 'url', 'start', 'end', 'pricePatrons', 'eventYear']),
+			o.subject
+		);
+		r.totalpatrons = o.rest;
+		// r.averageFund = MoneyString((o.total / o.rest).toFixed(0));
+		r.averageFund = o.rest > 0 ? o.total / o.rest : null;
+		r.pricePatrons = o.pricePatrons.map((reward) => ({ ...reward }));
+		r.id = i;
+		r.period = dayFrom(o.end, o.start);
+		// r.eventYear = Number(o.sub.slice(0, 4));
+		// if (isNaN(r.eventYear)) {
+		// 	console.log('NaN: ', o.sub);
+		// }
+		r.ppTotal = o.pricePatrons.reduce((res, x) => ((res += x.price * x.patrons), res), 0);
+		arr.push(r);
 
-	// process profile data
-	yrSelection.add(r.eventYear);
-	let mbs = r.member.split(',').map((x) => x.trim());
-	for (const m of mbs) {
-		mbSet.add(m);
-	}
-	// let idx = Math.max(r.group.indexOf('/'), r.group.indexOf('／'));
-	// let gps =
-	// 	idx > -1 ? [r.group.slice(0, idx).trim(), r.group.slice(idx + 1).trim()] : [r.group.trim()];
-	// // if (idx > -1) {
-	// // 	console.log(gps);
-	// // }
-	const gps = r.group.split(/[/／]/).map((x) => x.trim());
-	r.group = gps;
-	for (const gp of gps) {
-		let entry = gpMap.get(gp);
-		if (!entry) {
-			entry = { mbs: new Set(mbs), count: 0 };
-			gpMap.set(gp, entry);
-		}
-		entry.count++;
+		// process profile data
+		yrSelection.add(r.eventYear);
+		let mbs = r.member.split(',').map((x) => x.trim());
 		for (const m of mbs) {
-			entry.mbs.add(m);
+			mbSet.add(m);
 		}
-	}
+		// let idx = Math.max(r.group.indexOf('/'), r.group.indexOf('／'));
+		// let gps =
+		// 	idx > -1 ? [r.group.slice(0, idx).trim(), r.group.slice(idx + 1).trim()] : [r.group.trim()];
+		// // if (idx > -1) {
+		// // 	console.log(gps);
+		// // }
+		const gps = r.group.split(/[/／]/).map((x) => x.trim());
+		r.group = gps;
+		for (const gp of gps) {
+			let entry = gpMap.get(gp);
+			if (!entry) {
+				entry = { mbs: new Set(mbs), count: 0 };
+				gpMap.set(gp, entry);
+			}
+			entry.count++;
+			for (const m of mbs) {
+				entry.mbs.add(m);
+			}
+		}
 
-	return arr;
-}, []);
-// console.log(processedData);
+		return arr;
+	}, []);
+	return { processedData, gpMap, mbSet, yrSelection };
+}
 
 // export const processedData = [];
 export function MoneyString(val, truncAtThousand = false) {
